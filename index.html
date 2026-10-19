@@ -864,8 +864,7 @@ function makeItemMesh(id){const g=new THREE.Group();
     const gl=glowSprite(0x3aff5a,0.17,false);gl.position.set(-0.012,0.03,z);gl.userData.led=true;g.add(gl);});}
   else if(id==='pilaG'){const b=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.2,0.12),lam(null,0x2a2c33));b.position.y=0.1;g.add(b);
     [-1,1].forEach(sd=>{const st=new THREE.Mesh(new THREE.PlaneGeometry(0.17,0.17),lam(EYE_TEX));st.position.set(0,0.1,sd*0.061);if(sd<0)st.rotation.y=Math.PI;g.add(st);});
-    [-0.05,0.05].forEach((x,k)=>{const t=new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,0.03,10),lam(null,k?0xb03030:0x303030));t.position.set(x,0.215,0);g.add(t);});
-    const led=new THREE.Mesh(new THREE.BoxGeometry(0.018,0.008,0.012),new THREE.MeshBasicMaterial({color:0x5aff6a}));led.position.set(0,0.204,0.035);g.add(led);const gl=glowSprite(0x3aff5a,0.2,false);gl.position.set(0,0.21,0.035);g.add(gl);}
+    [-0.05,0.05].forEach((x,k)=>{const t=new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,0.03,10),lam(null,k?0xb03030:0x303030));t.position.set(x,0.215,0);g.add(t);});}
   else if(id==='fusible'){const gl=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.11,14),new THREE.MeshPhongMaterial({color:0xcfe6ee,transparent:true,opacity:0.45,shininess:120,specular:0xffffff}));gl.position.y=0.075;g.add(gl);
     [0.012,0.138].forEach(y=>{const cp=new THREE.Mesh(new THREE.CylinderGeometry(0.033,0.033,0.03,14),lam(null,0xb8b4a8));cp.position.y=y+(y<0.1?0:0);g.add(cp);});
     const fl=new THREE.Mesh(new THREE.BoxGeometry(0.006,0.1,0.006),new THREE.MeshBasicMaterial({color:0xff9a3a}));fl.position.y=0.075;fl.userData.glow=true;g.add(fl);}
