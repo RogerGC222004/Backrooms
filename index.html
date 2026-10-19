@@ -683,7 +683,7 @@ const ITEMS={
   calmantes:{name:'Calmantes',desc:'Un frasco de pastillas sin etiqueta. Recuperan mucha cordura de golpe.',icon:SV+'<rect x="7" y="8" width="10" height="13" rx="1.5"/><path d="M6 4h12v4H6z"/><path d="M10 14.5h4M12 12.5v4"/></svg>'},
   barra:{name:'Barra energética',desc:'Cacahuate y miel. Llena tu energía y durante 90 segundos te cansas la mitad al correr.',icon:SV+'<rect x="3" y="9" width="18" height="6" rx="1"/><path d="M7 9v6M17 9v6"/><path d="M3 9L1.5 7.5M3 15l-1.5 1.5M21 9l1.5-1.5M21 15l1.5 1.5"/></svg>'},
   brujula:{name:'Brújula rota',desc:'Su aguja no apunta al norte: apunta al elevador. Cuando la cordura baja o algo está cerca, enloquece.',icon:SV+'<circle cx="12" cy="12" r="9"/><path d="M15 9l-2 4.5L9 15l2-4.5z"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>'},
-  pilaG:{name:'Pila del elevador',desc:'Una pila enorme y pesada. Estaba debajo del cuadro. Encaja en la caja de energía del elevador.',icon:SV+'<rect x="7" y="5" width="10" height="16" rx="2"/><path d="M10 3h4v2h-4z"/><path d="M12.5 9l-2 4h3l-2 4"/></svg>'},
+  pilaG:{name:'Batería del ojo',desc:'Una batería cuadrada con una criatura de un solo ojo estampada. Estaba debajo del cuadro. Encaja en la caja de energía del elevador.',icon:SV+'<rect x="4" y="6" width="16" height="14" rx="1"/><path d="M8 6V4h2v2M14 6V4h2v2"/><circle cx="12" cy="13" r="4.2"/><ellipse cx="12" cy="12" rx="2.4" ry="1.2"/><path d="M10 15.4h.01M11.5 15.9h.01M12.8 15.9h.01M14 15.4h.01"/></svg>'},
   fusible:{name:'Fusible',desc:'Un fusible de cristal con el filamento todavía tibio. Encaja en la caja de energía del elevador.',icon:SV+'<rect x="8" y="6" width="8" height="12" rx="1.5"/><path d="M9 6V3.5h6V6M9 18v2.5h6V18"/><path d="M12 8l-1.5 2.5L12 13l-1.5 2.5"/></svg>'},
   nota:{name:'Nota arrugada',desc:'Alguien estuvo aquí antes que tú. Puedes leerla.',icon:SV+'<path d="M6 3h9l3 3v15H6z"/><path d="M15 3v3h3"/><path d="M9 10h6M9 13h6M9 16h4"/></svg>'}
 };
@@ -708,6 +708,12 @@ function closeInv(relock){if(!S.inv)return;S.inv=false;INV.pick=null;$('#inv').h
 const BAT_C=mk(128,64),BAT_TEX=new THREE.CanvasTexture(BAT_C);KEEP.add(BAT_TEX);let batShown=-1;
 function drawBat(v){if(v===batShown)return;batShown=v;const g=BAT_C.getContext('2d');g.fillStyle='#050a06';g.fillRect(0,0,128,64);g.strokeStyle='#1d3a22';g.lineWidth=4;g.strokeRect(2,2,124,60);
   const col=v<=15?'#ff5a3a':'#6dff86';g.fillStyle=col;g.shadowColor=col;g.shadowBlur=12;g.font='48px VT323, monospace';g.textAlign='center';g.textBaseline='middle';g.fillText(v+'%',64,34);BAT_TEX.needsUpdate=true;}
+const EYE_TEX=(()=>{const c=mk(128,128),g=c.getContext('2d');g.fillStyle='#3a3d46';g.fillRect(0,0,128,128);g.strokeStyle='#8a8f9c';g.lineWidth=4;g.strokeRect(6,6,116,116);
+  g.fillStyle='#0a0a0c';g.beginPath();g.arc(64,66,40,0,7);g.fill();g.strokeStyle='#8a8f9c';g.lineWidth=2;g.stroke();
+  g.fillStyle='#f2eee6';g.beginPath();g.ellipse(64,54,27,15,0,0,7);g.fill();g.fillStyle='#050505';g.beginPath();g.arc(64,54,11,0,7);g.fill();
+  g.fillStyle='rgba(255,255,255,.8)';g.beginPath();g.arc(60,50,2.5,0,7);g.fill();
+  g.fillStyle='#efebe3';[[-22,82],[-6,89],[9,88],[23,80]].forEach(([x,y])=>{g.beginPath();g.arc(64+x,y,4.6,0,7);g.fill();});
+  const t=new THREE.CanvasTexture(c);KEEP.add&&KEEP.add(t);return t;})();
 const DUCK_TEX=(()=>{const c=mk(128,128),g=c.getContext('2d');g.fillStyle='#3a3d46';g.fillRect(0,0,128,128);g.strokeStyle='#8a8f9c';g.lineWidth=4;g.strokeRect(6,6,116,116);
   g.fillStyle='#f6c41c';g.beginPath();g.ellipse(60,82,34,22,0,0,7);g.fill();g.beginPath();g.arc(78,52,18,0,7);g.fill();g.beginPath();g.moveTo(34,74);g.lineTo(20,60);g.lineTo(36,68);g.fill();
   g.fillStyle='#f0682a';g.beginPath();g.ellipse(98,56,10,5,0,0,7);g.fill();g.fillStyle='#111';g.beginPath();g.arc(82,47,3,0,7);g.fill();
@@ -856,10 +862,10 @@ function makeItemMesh(id){const g=new THREE.Group();
     const tip=new THREE.Mesh(new THREE.CylinderGeometry(0.006,0.006,0.006,8),lam(null,0xcccccc));tip.rotation.z=Math.PI/2;tip.position.set(0.038,0.014,z);g.add(tip);
     const led=new THREE.Mesh(new THREE.BoxGeometry(0.009,0.005,0.007),new THREE.MeshBasicMaterial({color:0x5aff6a}));led.position.set(-0.012,0.0285,z);g.add(led);
     const gl=glowSprite(0x3aff5a,0.17,false);gl.position.set(-0.012,0.03,z);gl.userData.led=true;g.add(gl);});}
-  else if(id==='pilaG'){const b=new THREE.Mesh(new THREE.CylinderGeometry(0.075,0.075,0.26,20),new THREE.MeshPhongMaterial({color:0x1c1d22,shininess:60,specular:0x444444}));b.position.y=0.13;g.add(b);
-    const bd=new THREE.Mesh(new THREE.CylinderGeometry(0.0765,0.0765,0.12,20),new THREE.MeshPhongMaterial({color:0xc8902a,shininess:80,specular:0x664422}));bd.position.y=0.17;g.add(bd);
-    const tp=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.025,14),lam(null,0xb8b4a8));tp.position.y=0.272;g.add(tp);
-    const led=new THREE.Mesh(new THREE.BoxGeometry(0.02,0.012,0.01),new THREE.MeshBasicMaterial({color:0x5aff6a}));led.position.set(0,0.235,0.075);g.add(led);const gl=glowSprite(0x3aff5a,0.22,false);gl.position.set(0,0.235,0.08);g.add(gl);}
+  else if(id==='pilaG'){const b=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.2,0.12),lam(null,0x2a2c33));b.position.y=0.1;g.add(b);
+    [-1,1].forEach(sd=>{const st=new THREE.Mesh(new THREE.PlaneGeometry(0.17,0.17),lam(EYE_TEX));st.position.set(0,0.1,sd*0.061);if(sd<0)st.rotation.y=Math.PI;g.add(st);});
+    [-0.05,0.05].forEach((x,k)=>{const t=new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,0.03,10),lam(null,k?0xb03030:0x303030));t.position.set(x,0.215,0);g.add(t);});
+    const led=new THREE.Mesh(new THREE.BoxGeometry(0.018,0.008,0.012),new THREE.MeshBasicMaterial({color:0x5aff6a}));led.position.set(0,0.204,0.035);g.add(led);const gl=glowSprite(0x3aff5a,0.2,false);gl.position.set(0,0.21,0.035);g.add(gl);}
   else if(id==='fusible'){const gl=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.11,14),new THREE.MeshPhongMaterial({color:0xcfe6ee,transparent:true,opacity:0.45,shininess:120,specular:0xffffff}));gl.position.y=0.075;g.add(gl);
     [0.012,0.138].forEach(y=>{const cp=new THREE.Mesh(new THREE.CylinderGeometry(0.033,0.033,0.03,14),lam(null,0xb8b4a8));cp.position.y=y+(y<0.1?0:0);g.add(cp);});
     const fl=new THREE.Mesh(new THREE.BoxGeometry(0.006,0.1,0.006),new THREE.MeshBasicMaterial({color:0xff9a3a}));fl.position.y=0.075;fl.userData.glow=true;g.add(fl);}
@@ -905,7 +911,7 @@ const VM_POSE={
   llave:{p:[0.17,-0.19,-0.38],r:[0.3,0.5,0.2],s:1.6},caja:{p:[0.14,-0.25,-0.52],r:[0.15,0.5,0],s:0.72},bateria:{p:[0.15,-0.25,-0.46],r:[0.1,-0.35,0],s:1.0},
   silbato:{p:[0.16,-0.19,-0.37],r:[0.25,0.6,0],s:1.6},pilas:{p:[0.17,-0.2,-0.4],r:[0.35,0.5,0.4],s:1.4},
   tiza:{p:[0.16,-0.15,-0.36],r:[0.3,0.6,0.25],s:1.05},bengala:{p:[0.19,-0.2,-0.42],r:[0.15,1.0,0.35],s:1.25},calmantes:{p:[0.16,-0.16,-0.4],r:[0.2,0,0.05],s:1.2},
-  pilaG:{p:[0.2,-0.3,-0.5],r:[0.15,0.4,0.1],s:0.7},fusible:{p:[0.15,-0.16,-0.38],r:[0.35,0.3,0.4],s:1.45},barra:{p:[0.15,-0.14,-0.38],r:[0.45,0.55,0.15],s:1.3},brujula:{p:[0.12,-0.14,-0.34],r:[0.9,0,0],s:1.3}};
+  pilaG:{p:[0.15,-0.25,-0.46],r:[0.1,-0.35,0],s:1.0},fusible:{p:[0.15,-0.16,-0.38],r:[0.35,0.3,0.4],s:1.45},barra:{p:[0.15,-0.14,-0.38],r:[0.45,0.55,0.15],s:1.3},brujula:{p:[0.12,-0.14,-0.34],r:[0.9,0,0],s:1.3}};
 function vmSwap(id){if(VM.obj){vmScene.remove(VM.obj);disposeGroup(VM.obj);VM.obj=null;}VM.id=id;if(!id)return;
   const P0=VM_POSE[id],g=new THREE.Group(),m=makeItemMesh(id);m.rotation.set(P0.r[0],P0.r[1],P0.r[2]);m.scale.setScalar(P0.s);g.add(m);
   const hd=makeHand(),hp=HAND_POSE[id]||[0,0,0.04];hd.position.set(hp[0],hp[1],hp[2]);g.add(hd);g.userData.base=P0.p;vmScene.add(g);VM.obj=g;}
@@ -988,7 +994,7 @@ function updateMe(){const on=(S.state==='play'||S.state==='pause')&&!S.scope&&!S
   const back=0.3;ME.root.position.set(P.x+Math.sin(P.yaw)*back,P.y,P.z+Math.cos(P.yaw)*back);ME.root.rotation.y=P.yaw+Math.PI;
   ME.pose({ph:S.bob*0.5,amt:S.moveAmt||0,air:S.airF||0,crouch:S.crouch||0,lean:(S.crouch||0)*0.35,reach:0});}
 /* mano en primera persona */
-const HAND_POSE={pilaG:[0.0,0.1,0.06],fusible:[0.01,0.0,0.035],tiza:[0.01,-0.02,0.03],bengala:[0.0,-0.01,0.04],calmantes:[0.0,0.0,0.035],barra:[0.01,-0.02,0.03],brujula:[0.03,-0.06,0.04],linterna:[0.0,-0.005,0.035],agua:[0.045,0.12,0.03],nota:[0.03,-0.03,0.07],llave:[0.015,-0.025,0.03],caja:[0.12,0.01,0.15],
+const HAND_POSE={pilaG:[0.07,0.02,0.08],fusible:[0.01,0.0,0.035],tiza:[0.01,-0.02,0.03],bengala:[0.0,-0.01,0.04],calmantes:[0.0,0.0,0.035],barra:[0.01,-0.02,0.03],brujula:[0.03,-0.06,0.04],linterna:[0.0,-0.005,0.035],agua:[0.045,0.12,0.03],nota:[0.03,-0.03,0.07],llave:[0.015,-0.025,0.03],caja:[0.12,0.01,0.15],
   bateria:[0.07,0.02,0.08],silbato:[0.01,-0.02,0.03],pilas:[0.015,-0.025,0.035]};
 function makeHand(side){side=side||1;const g=new THREE.Group(),suit=new THREE.MeshPhongMaterial({color:0xe5bf1c,shininess:45,specular:0x3a3010}),rubber=new THREE.MeshPhongMaterial({color:0x232326,shininess:18}),tape=new THREE.MeshPhongMaterial({color:0x141416});
   const fist=new THREE.Mesh(new THREE.SphereGeometry(0.05,20,14),rubber);fist.scale.set(1,0.9,1.25);g.add(fist);
@@ -1012,7 +1018,7 @@ const noPower=()=>(S.floor===1&&!S.power1)||(S.floor===2&&!S.power2)||(S.floor<0
   lg.fillStyle='#d9b21c';lg.fillRect(24,24,80,80);lg.fillStyle='#111';lg.beginPath();lg.moveTo(70,30);lg.lineTo(44,70);lg.lineTo(62,70);lg.lineTo(54,98);lg.lineTo(84,56);lg.lineTo(66,56);lg.closePath();lg.fill();
   const lab=new THREE.Mesh(new THREE.PlaneGeometry(0.2,0.2),lam(new THREE.CanvasTexture(lc)));lab.rotation.y=Math.PI/2;lab.position.set(0.011,0,0.21);pivot.add(lab);
   EBOX.pivot=pivot;
-  {const pg=makeItemMesh('pilaG');pg.scale.setScalar(0.8);pg.position.set(-EO+0.22,1.28,PBZ-0.12);pg.visible=false;elev.add(pg);EBOX.p2=pg;}
+  {const pg=makeItemMesh('pilaG');pg.scale.setScalar(1.25);pg.rotation.y=Math.PI/2;pg.position.set(-EO+0.2,1.32,PBZ);pg.visible=false;elev.add(pg);EBOX.p2=pg;}
   {const fu=makeItemMesh('fusible');fu.scale.setScalar(1.3);fu.rotation.set(0,0,Math.PI/2);fu.position.set(-EO+0.2,1.58,PBZ+0.08);fu.visible=false;elev.add(fu);EBOX.fuse=fu;}
   const act={dist:2.3,info(){if(EBOX.target<0.5)return{label:'ABRIR',text:'Abrir la caja de energía'};
       if(S.floor===2){if(!S.power2&&held()==='pilaG')return{label:'COLOCAR',text:'Colocar la pila'};return{label:'CERRAR',text:S.power2?'Cerrar la caja de energía':'Le falta una pila · Cerrar'};}
