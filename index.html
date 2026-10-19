@@ -2417,7 +2417,7 @@ function crWander(G,C,dt){if(C.stT<=0||Math.hypot(C.tx-C.x,C.tz-C.z)<1){C.stT=3+
 function crDrop(G,id,x,z,key){if(S.taken[key]||!G.gen)return;const h=G.ground(x,z,99)||0,m=makeItemMesh(id);m.position.set(x,Math.max(h,G.sea!=null?G.sea:-99),z);m.userData.pick={id:id,key:key};m.traverse(o=>{o.userData.root=m;});G.group.add(m);G.picks.push(m);noiseBurst(0.2,900,0.05);}
 
 /* ---------- Nivel 2: el salón de madera y el ojo del cuadro ---------- */
-const L2={L:170,R:470,CEIL:130,BR:42};
+const L2={L:170,R:470,CEIL:130,BR:42,BY:60,BD:58};
 function l2PaintTex(c,empty){const g=c.getContext('2d'),W=c.width,H=c.height,R=Math.random;
   const bg=g.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#5a4a36');bg.addColorStop(1,'#8a7656');g.fillStyle=bg;g.fillRect(0,0,W,H);
   for(let i=0;i<500;i++){g.strokeStyle='rgba('+(R()<.5?'150,125,90':'40,30,18')+','+(R()*0.22)+')';g.lineWidth=1+R()*3;g.beginPath();const x=R()*W,y=R()*H;g.moveTo(x,y);g.lineTo(x+(R()-.5)*30,y+(R()-.5)*14);g.stroke();}
@@ -2546,7 +2546,7 @@ function buildLevel2(){
   if(!taken){const m=makeItemMesh('pilaG');m.position.set(0,0,zP-1.1);m.rotation.y=0.4;m.userData.pick={id:'pilaG',key:'l2-pila',dist:2.6};m.traverse(o=>{o.userData.root=m;});grp.add(m);G.picks.push(m);G.pilaM=m;}
   // criatura
   const Bst=makeEyeBeast();Bst.root.scale.setScalar(L2.BR);Bst.root.visible=G.phase!=='cuadro';grp.add(Bst.root);G.beast=Bst;
-  G.bp=new THREE.Vector3(G.phase==='guarda'?0:58,G.phase==='guarda'?66:58,G.phase==='guarda'?-78:Math.max(P.z-118,-70));Bst.root.position.copy(G.bp);
+  G.sub='tras';G.bp=new THREE.Vector3(0,L2.BY,G.phase==='guarda'?SF+L2.BD:Math.max(P.z+L2.BD,SF+L2.BD));Bst.body.rotation.x=0.3;Bst.root.position.copy(G.bp);
   G.ground=function(x,z){return Math.hypot(x,z)>R?null:0;};G.surfaceAt=null;
   G.free=function(x,z){if(Math.hypot(x,z)>R-1)return false;if(x>-SO-0.3&&x<SO+0.3&&z>-SO-0.3&&z<SF+0.3)return false;for(const o of G.obs)if(x>o.x1-0.3&&x<o.x2+0.3&&z>o.z1-0.3&&z<o.z2+0.3)return false;return true;};
   G.update=function(dt){l2Tick(G,dt);};
@@ -2554,14 +2554,16 @@ function buildLevel2(){
 const _l2v=new THREE.Vector3(),_l2q=new THREE.Quaternion(),_l2m=new THREE.Matrix4();
 function l2Tick(G,dt){const B=G.beast,zP=G.zP;
   if(G.phase==='cuadro'&&S.taken['l2-pila']){G.phase='sigue';l2PaintTex(G.paintC,true);G.paintT.needsUpdate=true;B.root.visible=true;
-    _l2v.set(P.x+58,58,Math.max(P.z-118,-70));G.bp.copy(_l2v);B.root.position.copy(_l2v);tone(41,0,4,0.22,'sine');tone(55,0.3,3.5,0.12,'sine');noiseBurst(3,90,0.12);}
+    G.sub='espera';_l2v.set(0,L2.BY,Math.max(P.z-L2.BD,SF+L2.BD));G.bp.copy(_l2v);B.root.position.copy(_l2v);B.root.quaternion.setFromAxisAngle(_l2v.set(0,1,0),0);tone(41,0,4,0.22,'sine');tone(55,0.3,3.5,0.12,'sine');noiseBurst(3,90,0.12);}
   if(G.phase==='sigue'&&S.power2)G.phase='guarda';
   if(G.phase==='cuadro'){G.amb=0;return;}
   const prog=clamp(1-(P.z-SF)/L2.L,0,1);
-  if(G.phase==='sigue'){const near=clamp((P.z-SF)/80,0,1);_l2v.set(58*near,56+12*(1-near),Math.max(P.z-118,-72));}else _l2v.set(0,66,-78);
-  G.bp.lerp(_l2v,Math.min(1,dt*0.9));B.root.position.copy(G.bp);B.root.position.y+=Math.sin(S.t*0.5)*2.2;{const br=1+Math.sin(S.t*0.9)*0.012;B.body.scale.set(br,1/br,br);}
+  // espera sobre el camino hasta que pasas por debajo; luego te sigue por detrás y se queda frente al elevador
+  if(G.phase==='sigue'&&G.sub==='espera'){_l2v.copy(G.bp);if(P.z<G.bp.z-6)G.sub='tras';}
+  else if(G.phase==='sigue')_l2v.set(clamp(P.x*0.4,-12,12),L2.BY,Math.max(P.z+L2.BD,SF+L2.BD));else _l2v.set(0,L2.BY,SF+L2.BD);
+  G.bp.lerp(_l2v,Math.min(1,dt*0.7));B.root.position.copy(G.bp);B.root.position.y+=Math.sin(S.t*0.5)*2.2;{const br=1+Math.sin(S.t*0.9)*0.012;B.body.scale.set(br,1/br,br);B.body.rotation.x=0.3;}
   // gira para seguirte con el ojo
-  _l2m.lookAt(camera.position,B.root.position,_l2v.set(0,1,0));_l2q.setFromRotationMatrix(_l2m);
+  _l2m.lookAt(camera.position,B.root.position,_up);_l2q.setFromRotationMatrix(_l2m);
   B.root.quaternion.slerp(_l2q,Math.min(1,dt*1.6));
   // linterna: se enfada
   let lit=false;if(S.state==='play'&&held()==='linterna'&&S.flashOn&&!S.grab){camera.updateMatrixWorld();const fw=_l2v.set(0,0,-1).applyQuaternion(camera.quaternion),to=B.root.position.clone().sub(camera.position),d=to.length();
@@ -2583,8 +2585,8 @@ function l2Grab(G){S.grab={t:0};const B=G.beast;tone(48,0,3,0.35,'sawtooth');noi
     B.tent.push({hv,segs,ph:Math.random()*6,off:new THREE.Vector3((Math.random()-0.5)*2.2,(Math.random()-0.5)*1.6,(Math.random()-0.5)*2.2),delay:Math.random()*0.5});}}
 const _tp=new THREE.Vector3(),_ta=new THREE.Vector3(),_tb=new THREE.Vector3(),_tc=new THREE.Vector3(),_up=new THREE.Vector3(0,1,0);
 function l2GrabTick(G,dt){const g=S.grab,B=G.beast;g.t+=dt;B.root.updateMatrixWorld();
-  const eye=_tp.set(0,0.3,1.2).applyMatrix4(B.root.matrixWorld);
-  for(const T2 of B.tent){const k=clamp((g.t-T2.delay)/0.9,0,1);const st=T2.hv.clone().applyMatrix4(B.root.matrixWorld);
+  const eye=_tp.set(0,0.3,1.2).applyMatrix4(B.body.matrixWorld);
+  for(const T2 of B.tent){const k=clamp((g.t-T2.delay)/0.9,0,1);const st=T2.hv.clone().applyMatrix4(B.body.matrixWorld);
     const tgt=_tb.set(camera.position.x,camera.position.y-0.6,camera.position.z).add(T2.off);const end=_tc.copy(st).lerp(tgt,k*(1-Math.max(0,g.t-1.4)*0));
     const mid=st.clone().lerp(end,0.5).add(new THREE.Vector3(Math.sin(S.t*3+T2.ph)*10,Math.cos(S.t*2.5+T2.ph)*8,0));
     let prev=st.clone();for(let s=0;s<T2.segs.length;s++){const t=(s+1)/T2.segs.length,a=1-t,p=new THREE.Vector3().addScaledVector(st,a*a).addScaledVector(mid,2*a*t).addScaledVector(end,t*t);
