@@ -3185,7 +3185,10 @@ function crBake(C){const ref=new Set(),seen=new Set();
       out.setIndex(new THREE.BufferAttribute(idx,1));out.computeBoundingSphere();
       const f=list[0],mm=new THREE.Mesh(out,f.material);if(f.userData.hair)mm.userData.hair=true;mm.castShadow=f.castShadow;mm.receiveShadow=f.receiveShadow;mm.renderOrder=f.renderOrder;mm.frustumCulled=f.frustumCulled;
       const at=par.children.indexOf(f);for(const m of list)par.remove(m);par.add(mm);par.children.splice(par.children.indexOf(mm),1);par.children.splice(Math.min(at,par.children.length),0,mm);}}
-  C.bake=[before,after];}
+  C.bake=[before,after];
+  // optimización: las piezas diminutas (uñas, foquitos, dientes…) no proyectan sombra; su sombra casi no se ve y cuesta igual que una grande
+  C.root.updateMatrixWorld(true);const ws=new THREE.Vector3(),lim=Math.max(0.05,0.03*(C.H||2));let small=0;
+  C.root.traverse(m=>{if(!m.isMesh||!m.castShadow||!m.geometry)return;if(!m.geometry.boundingSphere)m.geometry.computeBoundingSphere();m.getWorldScale(ws);const rad=m.geometry.boundingSphere.radius*Math.max(Math.abs(ws.x),Math.abs(ws.y),Math.abs(ws.z));if(rad<lim){m.castShadow=false;small++;}});C.bake.push(small);}
 const _crv=new THREE.Vector3();
 function crAnimInit(C){const r=rng((C.seedA||12345)+999),pick=a=>a[Math.floor(r()*a.length)];
   const bip=C.legs.length===2&&!C.legs[0].spider&&C.legs[0].tri==null;
