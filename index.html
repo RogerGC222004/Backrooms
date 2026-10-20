@@ -113,6 +113,10 @@ html,body{height:100%;margin:0;background:var(--void);color:var(--paper);overflo
 .inv-part{display:flex;flex-direction:column;gap:8px;min-width:0}
 .inv-h{margin:0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
 .grid{display:grid;grid-template-columns:repeat(5,var(--slot));gap:6px}
+.chestGrid{grid-template-columns:repeat(auto-fill,var(--slot));width:min(100%,calc(var(--slot)*10 + 54px));max-height:min(42vh,330px);overflow-y:auto;padding-right:4px;overscroll-behavior:contain}
+.chestBar{display:flex;flex-wrap:wrap;gap:6px}
+#inv .chip{font-family:inherit;letter-spacing:0;padding:5px 9px!important;font-size:14px!important;line-height:1.2;color:var(--paper);background:rgba(236,226,168,.08);border:1px solid rgba(236,226,168,.3);padding:6px 10px;cursor:pointer}
+#inv .chip:hover,#inv .chip:focus-visible{background:rgba(236,226,168,.18)}
 #invInfo{margin:0;min-height:3.4em;max-width:34ch;font-size:13px;line-height:1.5;color:var(--paper)}
 #invInfo b{display:block;font-family:var(--f-vhs);font-weight:400;font-size:24px;color:var(--amber)}
 @media (max-width:520px){:root{--slot:48px}}
@@ -269,7 +273,12 @@ html,body{height:100%;margin:0;background:var(--void);color:var(--paper);overflo
 
 <section id="inv" hidden>
   <div class="box">
-    <h2>MOCHILA</h2>
+    <h2 id="invTitle">MOCHILA</h2>
+    <div class="inv-part" id="chestPart" hidden>
+      <p class="inv-h">Baúl del elevador · <span id="chestCount">0</span>/300</p>
+      <div class="chestBar"><button type="button" class="chip" id="sortType">Ordenar por tipo</button><button type="button" class="chip" id="sortName">Ordenar por nombre</button><button type="button" class="chip" id="stashAll">Guardar toda la mochila</button></div>
+      <div class="grid chestGrid" id="invChest"></div>
+    </div>
     <div class="inv-part">
       <p class="inv-h">Guardado</p>
       <div class="grid" id="invBag"></div>
@@ -278,6 +287,7 @@ html,body{height:100%;margin:0;background:var(--void);color:var(--paper);overflo
       <p class="inv-h">Barra rápida</p>
       <div class="grid" id="invHot"></div>
       <p id="invInfo"></p>
+      <button class="link" id="invMove" type="button" hidden>Guardar en el baúl</button>
       <button class="link" id="invDrop" type="button" hidden>Tirar al piso</button>
       <button class="link" id="invClose" type="button">Cerrar</button>
     </div>
@@ -718,7 +728,15 @@ const ITEMS={
   nota:{name:'Nota arrugada',desc:'Alguien estuvo aquí antes que tú. Puedes leerla.',icon:SV+'<path d="M6 3h9l3 3v15H6z"/><path d="M15 3v3h3"/><path d="M9 10h6M9 13h6M9 16h4"/></svg>'}
 };
 const BAG_ICON=SV+'<path d="M9 6V5a3 3 0 0 1 6 0v1"/><path d="M5 8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z"/><path d="M8 13h8v4H8z"/></svg>';
-const INV={hot:Array(5).fill(null),bag:Array(20).fill(null),sel:0,pick:null};
+const INV={hot:Array(5).fill(null),bag:Array(20).fill(null),chest:Array(300).fill(null),sel:0,pick:null};
+// tipos para ordenar el baúl
+const ITYPE={linterna:0,linternaG:0,reflector:0,pilas:0,bengala:0,agua:1,barra:1,calmantes:1,tiza:2,brujula:2,palanca:3,boton:3,bateriaE:3,fusible:3,cables:3,llaveE:3,nota:4,llave:4,caja:4,bateria:4,silbato:4,pilaG:4};
+function chestSort(byType){const it=INV.chest.filter(Boolean),nm=id=>ITEMS[id].name;it.sort((a,b)=>byType?((ITYPE[a]??9)-(ITYPE[b]??9)||nm(a).localeCompare(nm(b),'es')):nm(a).localeCompare(nm(b),'es'));INV.chest.fill(null);it.forEach((v,i)=>INV.chest[i]=v);INV.pick=null;renderInvPanel();tone(700,0,.05,.05,'triangle');}
+function chestStashAll(){let n=0;for(let i=0;i<INV.bag.length;i++){if(!INV.bag[i])continue;const j=INV.chest.indexOf(null);if(j<0)break;INV.chest[j]=INV.bag[i];INV.bag[i]=null;n++;}INV.pick=null;renderInvPanel();toast(n?'Guardaste '+n+' objeto'+(n>1?'s':'')+' en el baúl':(INV.chest.indexOf(null)<0?'El baúl está lleno':'Tu mochila está vacía'));}
+function chestMove(){const pk=INV.pick;if(!pk)return;const id=INV[pk.w][pk.i];if(!id)return;
+  if(pk.w==='chest'){let w='hot',j=INV.hot.indexOf(null);if(j<0){w='bag';j=INV.bag.indexOf(null);}if(j<0){toast('Tu mochila está llena');return;}INV[w][j]=id;INV.chest[pk.i]=null;}
+  else{const j=INV.chest.indexOf(null);if(j<0){toast('El baúl está lleno');return;}if(pk.w==='hot'&&pk.i===INV.sel&&LAMPS[id])S.flashOn=false;INV.chest[j]=id;INV[pk.w][pk.i]=null;}
+  INV.pick=null;tone(520,0,.06,.06,'triangle');renderInvPanel();renderHotbar();}
 const held=()=>INV.hot[INV.sel];
 const LAMPS={linterna:{bat:'flashBat',n:1,k:1,dist:26,ang:0.42,x:0.2,name:'La linterna'},linternaG:{bat:'flashBat2',n:2,k:1.9,dist:46,ang:0.62,x:0.2,name:'La linterna grande'},reflector:{bat:'flashBat3',n:3,k:2.8,dist:62,ang:0.78,x:0,name:'El reflector'}};
 const lampHeld=()=>!!LAMPS[held()],lampBat=()=>{const L=LAMPS[held()];return L?(S[L.bat]||0):S.flashBat;};
@@ -736,7 +754,9 @@ function renderInvPanel(){
   const pk=INV.pick,cls=(w,i)=>(pk&&pk.w===w&&pk.i===i?' pick':'')+(w==='hot'&&i===INV.sel?' sel':'');
   $('#invBag').innerHTML=INV.bag.map((id,i)=>slotBtn('bag',i,id,cls('bag',i))).join('');
   $('#invHot').innerHTML=INV.hot.map((id,i)=>slotBtn('hot',i,id,cls('hot',i),i+1)).join('');
-  $('#invInfo').innerHTML=infoFor(pk?INV[pk.w][pk.i]:null);$('#invDrop').hidden=!(pk&&INV[pk.w][pk.i]);}
+  $('#invInfo').innerHTML=infoFor(pk?INV[pk.w][pk.i]:null);$('#invDrop').hidden=!(pk&&INV[pk.w][pk.i]);
+  const ch=!!S.chestOpen;$('#chestPart').hidden=!ch;$('#invTitle').textContent=ch?'BAÚL Y MOCHILA':'MOCHILA';const mv=$('#invMove');mv.hidden=!(ch&&pk&&INV[pk.w][pk.i]);if(!mv.hidden)mv.textContent=pk.w==='chest'?'Sacar del baúl':'Guardar en el baúl';
+  if(ch){$('#invChest').innerHTML=INV.chest.map((id,i)=>slotBtn('chest',i,id,cls('chest',i))).join('');$('#chestCount').textContent=INV.chest.filter(Boolean).length;}}
 // tirar objetos al piso para hacer espacio
 function spawnDrop(id,x,y,z,key){if(!room||!room.picks||!room.group||!ITEMS[id])return;const m=makeItemMesh(id);m.position.set(x,y,z);m.rotation.y=Math.random()*6.28;m.userData.pick={id:id,key:key};m.traverse(o=>{o.userData.root=m;});shade(m);room.group.add(m);room.picks.push(m);}
 function dropItem(w,i){const id=INV[w][i];if(!id||S.state!=='play')return;if(!room||!room.picks||S.elev!=='idle'||S.feRide){toast('Aquí no puedes tirar cosas');return;}if(S.drinkT>0&&w==='hot'&&i===INV.sel)return;
@@ -745,7 +765,8 @@ function dropItem(w,i){const id=INV[w][i];if(!id||S.state!=='play')return;if(!ro
   INV[w][i]=null;if(w==='hot'&&i===INV.sel&&LAMPS[id])S.flashOn=false;spawnDrop(id,x,y,z,key);mpEmit('dp',[id,r2(x),r2(y),r2(z),key,S.floor]);
   noiseBurst(0.18,700,0.06);tone(260,0,.06,.05,'triangle');showHeld('Tiraste: '+ITEMS[id].name);INV.pick=null;renderHotbar();if(S.inv)renderInvPanel();}
 function openInv(){if(S.state!=='play'||modal()||S.scope)return;S.inv=true;INV.pick=null;Object.keys(keys).forEach(k=>keys[k]=false);joy.x=joy.y=0;renderInvPanel();$('#inv').hidden=false;$('#hotbar').style.visibility='hidden';$('#heldName').classList.remove('on');unlock();}
-function closeInv(relock){if(!S.inv)return;S.inv=false;INV.pick=null;$('#inv').hidden=true;$('#hotbar').style.visibility='';renderHotbar();if(relock)lock();}
+function openChest(){if(S.state!=='play'||modal()||S.scope)return;S.chestOpen=true;CHEST.target=1;noiseBurst(0.35,500,0.06);tone(150,0,.18,.06,'triangle');openInv();}
+function closeInv(relock){if(!S.inv)return;S.inv=false;if(S.chestOpen){S.chestOpen=false;CHEST.target=0;tone(110,0,.15,.06,'triangle');}INV.pick=null;$('#inv').hidden=true;$('#hotbar').style.visibility='';renderHotbar();if(relock)lock();}
 const BAT_C=mk(128,64),BAT_TEX=new THREE.CanvasTexture(BAT_C);KEEP.add(BAT_TEX);let batShown=-1;
 function drawBat(v){if(v===batShown)return;batShown=v;const g=BAT_C.getContext('2d');g.fillStyle='#050a06';g.fillRect(0,0,128,64);g.strokeStyle='#1d3a22';g.lineWidth=4;g.strokeRect(2,2,124,60);
   const col=v<=15?'#ff5a3a':'#6dff86';g.fillStyle=col;g.shadowColor=col;g.shadowBlur=12;g.font='48px VT323, monospace';g.textAlign='center';g.textBaseline='middle';g.fillText(v+'%',64,34);BAT_TEX.needsUpdate=true;}
@@ -1081,6 +1102,22 @@ function makeHand(side){side=side||1;const g=new THREE.Group(),suit=new THREE.Me
 
 /* ---------- Caja de energía del elevador ---------- */
 const EBOX={parts:[],open:0,target:0};
+// baúl del elevador: madera oscura con bandas de metal, contra la pared del fondo
+const CHEST={x:1.9,z:-HS+0.36,w:1.15,d:0.6,h:0.62,open:0,target:0,parts:[]};
+{const wood=lam(null,0x5a3b22),band=lam(null,0x2a2a2e),brass=new THREE.MeshPhongMaterial({color:0xb8913c,shininess:70,specular:0x665533});
+  const g=new THREE.Group();g.position.set(CHEST.x,0,CHEST.z);elev.add(g);const W=CHEST.w,D=CHEST.d,H=CHEST.h-0.14;
+  const body=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),wood);body.position.y=H/2+0.02;g.add(body);
+  for(const fx of [-0.42,0,0.42]){const b=new THREE.Mesh(new THREE.BoxGeometry(0.06,H+0.01,D+0.02),band);b.position.set(fx*W,H/2+0.02,0);g.add(b);}
+  for(const sx of [-1,1])for(const sz of [-1,1]){const ft=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.04,0.08),band);ft.position.set(sx*(W/2-0.05),0.02,sz*(D/2-0.05));g.add(ft);}
+  const lid=new THREE.Group();lid.position.set(0,H+0.02,-D/2);g.add(lid);
+  const top=new THREE.Mesh(new THREE.CylinderGeometry(D/2,D/2,W,20,1,false,0,Math.PI),wood);top.rotation.z=Math.PI/2;top.rotation.x=Math.PI/2;top.scale.set(1,1,0.42);top.position.set(0,0,D/2);lid.add(top);
+  const slab=new THREE.Mesh(new THREE.BoxGeometry(W,0.03,D),wood);slab.position.set(0,0.015,D/2);lid.add(slab);
+  for(const fx of [-0.42,0,0.42]){const b=new THREE.Mesh(new THREE.CylinderGeometry(D/2+0.01,D/2+0.01,0.06,20,1,false,0,Math.PI),band);b.rotation.z=Math.PI/2;b.rotation.x=Math.PI/2;b.scale.set(1,1,0.44);b.position.set(fx*W,0,D/2);lid.add(b);}
+  const lock=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.14,0.03),brass);lock.position.set(0,-0.05,D+0.012);lid.add(lock);
+  const inside=new THREE.Mesh(new THREE.PlaneGeometry(W-0.06,D-0.06),new THREE.MeshLambertMaterial({color:0x140c06}));inside.rotation.x=-Math.PI/2;inside.position.y=H+0.024;g.add(inside);
+  CHEST.lid=lid;const act={dist:2.4,info(){return{label:'ABRIR',text:'Abrir el baúl ('+INV.chest.filter(Boolean).length+'/300)'};},run(){openChest();}};
+  g.traverse(o=>{if(o.isMesh){o.userData.act=act;o.castShadow=true;o.receiveShadow=true;CHEST.parts.push(o);}});}
+const chestHit=(x,z)=>Math.abs(x-CHEST.x)<CHEST.w/2+R&&Math.abs(z-CHEST.z)<CHEST.d/2+R;
 const noPower=()=>(S.floor===1&&!S.power1)||(S.floor===2&&!S.power2)||(S.floor<0&&!isInfFloor(S.floor)&&!(S.fuses&&S.fuses[S.floor]));
 {const metal=lam(rep(T.steel,1,1),0x7d8088),dark=lam(null,0x121317);
   const PBZ=2.35;const body=box(0.08,0.46,0.46,metal,-EO+0.09,1.45,PBZ,elev);
@@ -1111,7 +1148,7 @@ function powerFx(){tone(120,0,.25,.2,'square');tone(240,.15,.3,.1,'sawtooth');no
 function powerOn(quiet){if(S.power1)return;S.power1=true;if(quiet)return;
   tone(120,0,.25,.2,'square');tone(240,.15,.3,.1,'sawtooth');noiseBurst(0.4,900,0.08);setTimeout(()=>{S.powerFlick=1.1;tone(880,0,.5,.06,'sine');},350);
   setTimeout(()=>{ding();toast('El elevador vuelve a tener energía');},1500);}
-function updateEbox(dt){EBOX.open+=(EBOX.target-EBOX.open)*Math.min(1,dt*6);EBOX.pivot.rotation.y=EBOX.open*1.45;EBOX.bat.visible=!!S.power1;EBOX.fuse.visible=S.floor<0&&!!(S.fuses&&S.fuses[S.floor]);EBOX.p2.visible=S.floor===2&&!!S.power2;EBOX.bat.visible=!!S.power1&&S.floor!==2;
+function updateEbox(dt){EBOX.open+=(EBOX.target-EBOX.open)*Math.min(1,dt*6);CHEST.open+=(CHEST.target-CHEST.open)*Math.min(1,dt*5);CHEST.lid.rotation.x=-CHEST.open*1.25;EBOX.pivot.rotation.y=EBOX.open*1.45;EBOX.bat.visible=!!S.power1;EBOX.fuse.visible=S.floor<0&&!!(S.fuses&&S.fuses[S.floor]);EBOX.p2.visible=S.floor===2&&!!S.power2;EBOX.bat.visible=!!S.power1&&S.floor!==2;
   let li=1.15;if(S.powerFlick>0){S.powerFlick-=dt;li=Math.random()<0.45?0.08:1.15;}else if(noPower())li=0.05;
   elevLight.intensity=li*1.17;lp.material.color.setScalar(li>0.5?1:0.1);}
 
@@ -3866,7 +3903,7 @@ function buildRoom(n){
 const R=0.25;
 function canBe(x,z){
   const low=P.y<2.5;
-  if(low&&Math.abs(x)<=HS-R&&z>=-HS+R&&z<=HS-R)return true;
+  if(low&&Math.abs(x)<=HS-R&&z>=-HS+R&&z<=HS-R)return !chestHit(x,z);
   const open=S.doorOpen>0.97;
   if(low&&open&&Math.abs(x)<=DH-R&&z>=HS-R-0.02&&z<=SF+R+0.02)return true;
   const inside=low&&Math.abs(P.x)<HS&&P.z>-HS&&P.z<HS-0.1;
@@ -4026,7 +4063,7 @@ function look(dx,dy,scale){if(S.scope)scale*=0.12;VM.swayX=clamp(VM.swayX+dx*0.0
 
 const ray=new THREE.Raycaster(),center=new THREE.Vector2(0,0);const _cand=[];
 function updateInteract(){
-  ray.setFromCamera(center,camera);const cand=_cand;cand.length=0;cand.push(btnUp,btnDn);for(const o of EBOX.parts)cand.push(o);
+  ray.setFromCamera(center,camera);const cand=_cand;cand.length=0;cand.push(btnUp,btnDn);for(const o of EBOX.parts)cand.push(o);for(const o of CHEST.parts)cand.push(o);
   // optimización: solo se revisan los objetos que están cerca (antes se revisaban todos los del mapa cargado)
   const cp0=camera.position;const near=arr=>{if(!arr)return;for(const o of arr){const e=o.matrixWorld.elements,dx=e[12]-cp0.x,dy=e[13]-cp0.y,dz=e[14]-cp0.z;if(dx*dx+dy*dy+dz*dz<144||o.userData.big)cand.push(o);}};
   if(room){near(room.picks);near(room.inter);}const hits=ray.intersectObjects(cand,true);
@@ -4195,10 +4232,10 @@ function unlock(){try{if(document.pointerLockElement)document.exitPointerLock();
 function startGame(slot,d,mpw){setRun(false);
   if(slot!=null)S.slot=slot;const run=S.run=(S.run||0)+1;
   initAudio();lock();show(null);$('#hud').hidden=false;
-  INV.hot.fill(null);INV.bag.fill(null);INV.sel=0;INV.pick=null;S.taken={};
+  INV.hot.fill(null);INV.bag.fill(null);INV.chest.fill(null);S.chestOpen=false;INV.sel=0;INV.pick=null;S.taken={};
   resetFade();S.deadLamps=new Set();S.runT=null;S.stepT=null;S.lastScare=null;Object.assign(S,{stam:1,tired:false,san:1,roll:0,alive:0,flashOn:true,drinkT:0,reading:false,power1:false,grateOpen:false,flashBat:100,flashBat2:0,flashBat3:0,duckNear:0,duckFreeze:0,whistleCd:0,powerFlick:0,barT:0,chalk:10,marks:[],fuses:{},crHitCd:0,noiseT:0,power2:false,grab:null,deathKind:null,hook:null,feRide:null,feKey:'',body:null,drag:null,dragPos:null,reviveArm:false,coop:null});$('#hook').hidden=true;$('#fade').style.background='';FLARES.splice(0).forEach(F=>{scene.remove(F.m);disposeGroup(F.m);});VM.na=null;exitScope();EBOX.target=0;EBOX.open=0;$('#note').hidden=true;
   let f=0;Object.assign(P,{x:0,z:-1.2,y:0,vy:0,yaw:Math.PI,pitch:-0.04});S.duckSave=null;
-  if(d){f=d.floor|0;d.hot.forEach((v,i)=>INV.hot[i]=ITEMS[v]?v:null);d.bag.forEach((v,i)=>{if(i<20)INV.bag[i]=ITEMS[v]?v:null;});INV.sel=d.sel|0;
+  if(d){f=d.floor|0;d.hot.forEach((v,i)=>INV.hot[i]=ITEMS[v]?v:null);d.bag.forEach((v,i)=>{if(i<20)INV.bag[i]=ITEMS[v]?v:null;});if(Array.isArray(d.chest))d.chest.forEach((v,i)=>{if(i<300)INV.chest[i]=ITEMS[v]?v:null;});INV.sel=d.sel|0;
     S.taken=d.taken||{};Object.assign(S,{stam:d.stam,san:d.san,alive:d.alive,flashOn:d.flashOn!==false,power1:!!d.power1,grateOpen:!!d.grate,flashBat:d.bat==null?100:d.bat,flashBat2:d.bat2||0,flashBat3:d.bat3||0});S.deadLamps=new Set(d.dead||[]);S.chalk=d.chalk>0?d.chalk:10;S.fuses=d.fuses&&typeof d.fuses==='object'?d.fuses:{};S.power2=!!d.power2;S.marks=Array.isArray(d.marks)?d.marks.filter(m=>m&&Array.isArray(m.p)&&Array.isArray(m.n)&&Array.isArray(m.u)):[];Object.assign(P,{x:d.x,z:d.z,y:d.y||0,yaw:d.yaw,pitch:0});S.duckSave=d.duck||null;}
   S.seed=mpw?mpw.sd:(d&&d.seed)?d.seed:((Math.random()*2e9)|0)+1;
   if(mpw){S.taken={};S.deadLamps=new Set();S.marks=[];S.fuses={};S.power2=!!mpw.p2;(Array.isArray(mpw.fz)?mpw.fz:[]).forEach(f=>{S.fuses[f|0]=1;});(Array.isArray(mpw.tk)?mpw.tk:[]).forEach(k=>{S.taken[k]=1;});(Array.isArray(mpw.dl)?mpw.dl:[]).forEach(k=>S.deadLamps.add(String(k)));
@@ -4219,8 +4256,8 @@ function loadSaves(){try{const v=JSON.parse(localStorage.getItem(SAVE_KEY)||'nul
 function storeSaves(a){memSaves=a.slice();try{localStorage.setItem(SAVE_KEY,JSON.stringify(a));}catch(e){}}
 function saveGame(){if(S.slot==null||!(S.state==='play'||S.state==='pause'))return;const a=loadSaves();
   if(MP.on&&!MP.host){const b=a[S.slot]||{floor:0,x:0,z:-1.2,yaw:Math.PI,y:0,seed:((Math.random()*2e9)|0)+1,taken:{},dead:[],power1:false,grate:false};
-    Object.assign(b,{stam:S.stam,san:S.san,alive:S.alive,flashOn:S.flashOn,hot:INV.hot.slice(),bag:INV.bag.slice(),sel:INV.sel,bat:S.flashBat,bat2:S.flashBat2||0,bat3:S.flashBat3||0,chalk:S.chalk,at:Date.now()});a[S.slot]=b;storeSaves(a);return;}
-  a[S.slot]={floor:S.floor,x:P.x,z:P.z,yaw:P.yaw,stam:S.stam,san:S.san,alive:S.alive,flashOn:S.flashOn,hot:INV.hot.slice(),bag:INV.bag.slice(),sel:INV.sel,taken:S.taken,seed:S.seed,y:P.y,power1:!!S.power1,grate:!!S.grateOpen,bat:S.flashBat,bat2:S.flashBat2||0,bat3:S.flashBat3||0,fuses:S.fuses||{},power2:!!S.power2,chalk:S.chalk,marks:S.marks.slice(-120).map(m=>({f:m.f,p:m.p,n:m.n,u:m.u,id:m.id})),dead:[...S.deadLamps].slice(-400),duck:(room&&room.lvl1&&room.duck)?{x:room.duck.x,y:room.duck.y,z:room.duck.z}:S.duckSave,at:Date.now()};storeSaves(a);}
+    Object.assign(b,{stam:S.stam,san:S.san,alive:S.alive,flashOn:S.flashOn,hot:INV.hot.slice(),bag:INV.bag.slice(),chest:INV.chest.slice(),sel:INV.sel,bat:S.flashBat,bat2:S.flashBat2||0,bat3:S.flashBat3||0,chalk:S.chalk,at:Date.now()});a[S.slot]=b;storeSaves(a);return;}
+  a[S.slot]={floor:S.floor,x:P.x,z:P.z,yaw:P.yaw,stam:S.stam,san:S.san,alive:S.alive,flashOn:S.flashOn,hot:INV.hot.slice(),bag:INV.bag.slice(),chest:INV.chest.slice(),sel:INV.sel,taken:S.taken,seed:S.seed,y:P.y,power1:!!S.power1,grate:!!S.grateOpen,bat:S.flashBat,bat2:S.flashBat2||0,bat3:S.flashBat3||0,fuses:S.fuses||{},power2:!!S.power2,chalk:S.chalk,marks:S.marks.slice(-120).map(m=>({f:m.f,p:m.p,n:m.n,u:m.u,id:m.id})),dead:[...S.deadLamps].slice(-400),duck:(room&&room.lvl1&&room.duck)?{x:room.duck.x,y:room.duck.y,z:room.duck.z}:S.duckSave,at:Date.now()};storeSaves(a);}
 function deleteSave(i){const a=loadSaves();a[i]=null;storeSaves(a);}
 setInterval(saveGame,5000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)saveGame();});
@@ -4276,6 +4313,7 @@ $('#hotbar').addEventListener('touchstart',e=>{if(e.target.closest('.slot[data-w
 $('#hotbar').addEventListener('click',e=>{const b=e.target.closest('.slot');if(b&&b.dataset.w==='bag-open'&&S.state==='play')openInv();});
 $('#invClose').onclick=()=>closeInv(true);
 $('#invDrop').onclick=()=>{const pk=INV.pick;if(pk)dropItem(pk.w,pk.i);};
+$('#invMove').onclick=chestMove;$('#sortType').onclick=()=>chestSort(true);$('#sortName').onclick=()=>chestSort(false);$('#stashAll').onclick=chestStashAll;
 $('#inv').addEventListener('click',e=>{const b=e.target.closest('.slot');if(!b){if(e.target.id==='inv')closeInv(true);return;}
   const w=b.dataset.w,i=+b.dataset.i,pk=INV.pick;
   if(!pk){if(INV[w][i]){INV.pick={w:w,i:i};tone(800,0,.04,.05,'triangle');}else if(w==='hot')INV.sel=i;}
