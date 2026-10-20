@@ -544,10 +544,13 @@ function saveOpts(){try{localStorage.setItem('backrooms-opts',JSON.stringify(opt
 
 /* ---------- Motor ---------- */
 const cv=$('#c');
-const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:!isTouch&&!opts.lowQ,powerPreference:isTouch?'default':'high-performance'});
+// rendimiento: resolución que se ajusta sola, 60 cuadros como máximo y sombras más ligeras en el teléfono
+const PERF={pr:0,cap:1.5,ema:1/60,lowT:0,hiT:0,sh:0,minDt:opts.lowQ?1/40:1/60};
+const maxPR=()=>Math.min(window.devicePixelRatio||1,opts.lowQ?1:isTouch?1.25:1.5);
+PERF.cap=maxPR();PERF.pr=PERF.cap;renderer.setPixelRatio(PERF.pr);
 const KEEP=new Set();
-renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled=!opts.lowQ;renderer.shadowMap.type=isTouch?THREE.PCFShadowMap:THREE.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;renderer.shadowMap.needsUpdate=true;
 function shade(o){o.traverse(m=>{if(!m.isMesh)return;const mt=m.material;if(mt&&!mt.isMeshBasicMaterial){m.receiveShadow=true;m.castShadow=!mt.transparent;}});return o;}
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(opts.fov,1,0.05,230);
@@ -683,7 +686,7 @@ try{document.fonts.load('bold 36px "Gochi Hand"').then(()=>{drawCrayon();CRAYON_
 {const pp=new THREE.Mesh(new THREE.PlaneGeometry(0.64,0.875),new THREE.MeshLambertMaterial({map:CRAYON_PAPER,color:0xcfcabd}));pp.rotation.set(0,Math.PI,0.035);pp.position.set(-2.35,1.5,EO-0.114);elev.add(pp);}
 const amb=new THREE.AmbientLight(0xfff3cf,0.32);scene.add(amb);shade(elev);
 scene.add(camera);
-const flash=new THREE.SpotLight(0xfff4dc,0,26,0.42,0.55,1);flash.castShadow=true;flash.shadow.mapSize.set(1024,1024);flash.shadow.camera.near=0.2;flash.shadow.camera.far=26;flash.shadow.bias=-0.0008;flash.shadow.normalBias=0.03;flash.position.set(0.2,-0.16,-0.35);camera.add(flash);camera.add(flash.target);flash.target.position.set(0.04,-0.04,-4);
+const flash=new THREE.SpotLight(0xfff4dc,0,26,0.42,0.55,1);flash.castShadow=!opts.lowQ;flash.shadow.mapSize.set(isTouch?512:1024,isTouch?512:1024);flash.shadow.camera.near=0.2;flash.shadow.camera.far=26;flash.shadow.bias=-0.0008;flash.shadow.normalBias=0.03;flash.position.set(0.2,-0.16,-0.35);camera.add(flash);camera.add(flash.target);flash.target.position.set(0.04,-0.04,-4);
 
 /* ---------- Objetos e inventario ---------- */
 const SV='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">';
@@ -2202,7 +2205,7 @@ function buildGen(n){
   if(B==='nieve'||(B==='pantano'&&sp.tod==='noche')){const n2=B==='nieve'?1400:70,pts=new Float32Array(n2*3);for(let i=0;i<n2;i++){pts[i*3]=(Math.random()-0.5)*44;pts[i*3+1]=Math.random()*20-6;pts[i*3+2]=(Math.random()-0.5)*44;}
     const pg2=new THREE.BufferGeometry();pg2.setAttribute('position',new THREE.BufferAttribute(pts,3));const pm=new THREE.Points(pg2,new THREE.PointsMaterial(B==='nieve'?{color:0xf4f8ff,size:0.07,transparent:true,opacity:0.9,depthWrite:false}:{color:0xd8ff70,size:0.09,transparent:true,opacity:0.9,depthWrite:false,fog:false}));pm.frustumCulled=false;grp.add(pm);G.parts=pm;G.partKind=B;}
   // ---------- actualización ----------
-  const RAD=out?3:2;
+  const RAD=out&&!opts.lowQ?3:2;
   G.update=function(dt){const px=camera.position.x,pz=camera.position.z,ccx=chunkOf(px),ccz=chunkOf(pz);let budget=G.first?14:1;G.first=false;
     for(let r=0;r<=RAD;r++)for(let i=-r;i<=r;i++)for(let j=-r;j<=r;j++){if(Math.max(Math.abs(i),Math.abs(j))!==r)continue;const k=ck(ccx+i,ccz+j);if(G.chunks.has(k))continue;if(budget--<=0)break;
       const c=G.genChunk(ccx+i,ccz+j);grp.add(c.g);G.chunks.set(k,c);}
@@ -3552,7 +3555,7 @@ syncOpts();
 
 // pantalla completa
 const qBtn=$('#optQ');function syncQ(){qBtn.textContent=opts.lowQ?'BAJA':'ALTA';qBtn.setAttribute('aria-pressed',opts.lowQ?'true':'false');}
-qBtn.onclick=()=>{opts.lowQ=!opts.lowQ;saveOpts();syncQ();setWaterQuality();click();};syncQ();
+qBtn.onclick=()=>{opts.lowQ=!opts.lowQ;saveOpts();syncQ();setWaterQuality();applyQuality();click();};syncQ();
 const fsBtn=$('#optFull');
 function isFull(){return !!(document.fullscreenElement||document.webkitFullscreenElement);}
 function syncFull(){const f=isFull();fsBtn.textContent=f?'SÍ':'NO';fsBtn.setAttribute('aria-pressed',f?'true':'false');}
@@ -3788,7 +3791,8 @@ buildRoom(0);
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let last=performance.now(),fr=0;
 function frame(now){
-  const dt=Math.min(0.05,(now-last)/1000);last=now;
+  if(now-last<PERF.minDt*1000-2){requestAnimationFrame(frame);return;}
+  const rdt=(now-last)/1000,dt=Math.min(0.05,rdt);last=now;perfTick(rdt);
   const live=S.state!=='pause'||MP.on;
   if(live){S.t+=dt;updateElev(dt);flicker(dt);}
   if(room&&room.inf&&live)room.update(camera.position.x,camera.position.z,dt,false,camera.position.y);
@@ -3816,6 +3820,13 @@ function frame(now){
   if(!reduce&&(fr++%3===0))grainTick();
   requestAnimationFrame(frame);
 }
+function perfTick(rdt){if(rdt>0.5)return;PERF.ema=PERF.ema*0.95+rdt*0.05;const pl=S.state==='play';
+  if(pl&&PERF.ema>1/42){PERF.lowT+=rdt;PERF.hiT=0;if(PERF.lowT>2&&PERF.pr>0.7){PERF.pr=Math.max(0.7,PERF.pr-0.15);PERF.lowT=0;renderer.setPixelRatio(PERF.pr);resize();}}
+  else if(PERF.ema<1/55){PERF.lowT=0;PERF.hiT+=rdt;if(PERF.hiT>8&&PERF.pr<PERF.cap){PERF.pr=Math.min(PERF.cap,PERF.pr+0.1);PERF.hiT=0;renderer.setPixelRatio(PERF.pr);resize();}}
+  else{PERF.lowT=0;PERF.hiT=0;}
+  PERF.sh=(PERF.sh+1)%(isTouch?2:1);renderer.shadowMap.needsUpdate=PERF.sh===0;}
+function applyQuality(){PERF.cap=maxPR();PERF.pr=PERF.cap;renderer.setPixelRatio(PERF.pr);resize();PERF.minDt=opts.lowQ?1/40:1/60;
+  const on=!opts.lowQ;if(renderer.shadowMap.enabled!==on){renderer.shadowMap.enabled=on;scene.traverse(o=>{if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.needsUpdate=true);}});}flash.castShadow=on;}
 const ready=()=>{drawDisplay();$('#loading').hidden=true;};
 (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(()=>{ready();if(room&&room.group)buildRoom(S.floor);});
 setTimeout(ready,2500);
