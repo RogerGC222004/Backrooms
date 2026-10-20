@@ -2242,6 +2242,8 @@ function buildGen(n){
     if(B==='mar'){const v=vnoise(x/46,z/46,sd)*0.75+vnoise(x/13,z/13,sd+3)*0.25;let h=-5.2+sstep(0.5,0.64,v)*5.5;const df=Math.hypot(x-F.x,z-F.z);if(df<11)h=Math.max(h,0.3-Math.pow(df/11,2)*5.6);const de=feD(x,z);if(de<13)h=Math.max(h,0.3-Math.pow(Math.max(0,de-3)/10,2)*5.6);return h;}
     if(NBIO[B]&&NBIO[B].h)return NBIO[B].h(x,z,sd);
     return 0;}
+  // si el fusible cae bajo el agua (playa), se mueve a tierra firme cercana
+  if(!sp.inf&&NBIO[B]&&NBIO[B].sea&&rawH(F.x,F.z)<-0.1){const okH=(x,z)=>rawH(x,z)>=0.05&&rawH(x+1.5,z)>=0.05&&rawH(x,z+1.5)>=0.05&&rawH(x-1.5,z)>=0.05&&rawH(x,z-1.5)>=0.05;fz:for(let rr=2;rr<80;rr+=2)for(let k=0;k<24;k++){const a=k/24*6.283,x=F.x+Math.sin(a)*rr,z=F.z+Math.cos(a)*rr;if(Math.abs(x)>half-9||Math.abs(z)>half-9||Math.hypot(x,z)<20)continue;if(okH(x,z)){F.x=x;F.z=z;break fz;}}}
   const hF=out&&B!=='mar'?rawH(F.x,F.z):0;
   const BS=44,SW=14,sideOk=v=>{const m=((v-(SW/2-1.5))%BS+BS)%BS;return m<BS-SW+3;};
   const poolInfo=(x,z)=>{if(B!=='piscinas')return null;const i=Math.floor(x/9),j=Math.floor(z/9),h=hash3(i,j,sd+31);if((h&3)!==0)return null;const cx2=i*9+4.5,cz2=j*9+4.5;if(elevD(cx2,cz2)<12||Math.hypot(cx2-F.x,cz2-F.z)<8)return null;
@@ -2501,7 +2503,9 @@ function buildGen(n){
       const fe=feBuild({key:st.key,x:st.x,z:st.z,y:y,yaw:st.yaw,spec:feSpec(st.seed),top:top});c.g.add(fe.g);fe.obs.forEach(o=>c.obs.push(o));c.fe=fe;G.fes.push(fe);fe.inter.forEach(m=>G.inter.push(m));
       if(B==='mar'){const pl=new THREE.Mesh(new THREE.CylinderGeometry(4.2,4.6,0.5,20),M.wood);pl.position.set(st.x,y-0.24,st.z);c.g.add(pl);}}
     if(!sp.inf&&F.x>=x0&&F.x<x0+CH&&F.z>=z0&&F.z<z0+CH){const h=G.ground(F.x,F.z,99)||0;const cr=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.55,0.7),lam(rep(T.crate,1,1)));cr.position.set(F.x,h+0.27,F.z);c.g.add(cr);c.obs.push({c:1,x:F.x,z:F.z,r:0.45,y2:h+0.6});
-      const fm=addPick(c,'fusible',F.x,h+0.55,F.z,'g'+n+'-'+sd+'-fusible',0.4);if(fm){fm.userData.pick.dist=2.8;G.fuseM=fm;}}
+      const fm=addPick(c,'fusible',F.x,h+0.55,F.z,'g'+n+'-'+sd+'-fusible',0.4);if(fm){fm.userData.pick.dist=2.8;G.fuseM=fm;
+        // brillo que late sobre la caja para verla de lejos
+        const gl=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW_TEX,color:0xffb347,transparent:true,opacity:0.7,depthWrite:false,blending:THREE.AdditiveBlending}));gl.scale.set(1.6,1.6,1);gl.position.set(F.x,h+0.85,F.z);c.g.add(gl);G.fuseGlow=gl;}}
     if(sp.compass){const r3=rng(sd+77),ca=r3()*6.283,cd=14+r3()*(half-24),bx=Math.sin(ca)*cd,bz=Math.cos(ca)*cd;if(bx>=x0&&bx<x0+CH&&bz>=z0&&bz<z0+CH){const h=G.ground(bx,bz,99);if(h!==null&&!(G.sea!=null&&h<G.sea))addPick(c,'brujula',bx,h,bz,'g'+n+'-'+sd+'-brujula',1.1);}}
     for(const k in geo){if(!geo[k].length)continue;const mat=(k.slice(0,2)==='bl'&&M.bl)?M.bl[+k.slice(2)]:M[k]||M.wall||M.g;const me=new THREE.Mesh(mergeGeoms(geo[k]),mat);c.g.add(me);}
     if(B==='mar'){}
@@ -2535,7 +2539,8 @@ function buildGen(n){
     if(G.water){G.water.position.set(Math.round(px/2)*2,G.waterLvl,Math.round(pz/2)*2);G.depthR.update(px,pz);}
     for(const c of G.chunks.values())if(c.bobs)for(const b of c.bobs){b.userData.bob+=dt;b.position.y=SEA+0.06+waveH(b.position.x,b.position.z,G.wA);b.rotation.z=Math.sin(b.userData.bob)*0.05+(waveH(b.position.x+1,b.position.z,G.wA)-waveH(b.position.x-1,b.position.z,G.wA))*0.4;}
     for(const f of G.flick){f.t-=dt;if(f.t<0){f.t=0.05+Math.random()*(Math.random()<0.2?2:0.25);f.m.visible=Math.random()<0.75;}}
-    if(G.fuseM&&G.fuseM.parent){G.beepT=(G.beepT||0)-dt;const d=Math.hypot(P.x-sp.fuse.x,P.z-sp.fuse.z);if(G.beepT<=0&&d<38&&S.state==='play'){G.beepT=2.2;ptone(1760,0,0.09,0.05*clamp(1-d/38,0.08,1),'sine',panFrom(Math.atan2(sp.fuse.x-P.x,sp.fuse.z-P.z)));}
+    if(G.fuseGlow){G.fuseGlow.visible=!!(G.fuseM&&G.fuseM.parent);G.fuseGlow.material.opacity=0.45+0.35*Math.abs(Math.sin(S.t*2.4));}
+    if(G.fuseM&&G.fuseM.parent){G.beepT=(G.beepT||0)-dt;const d=Math.hypot(P.x-sp.fuse.x,P.z-sp.fuse.z);if(G.beepT<=0&&d<70&&S.state==='play'){G.beepT=d<38?2.2:3.2;ptone(1760,0,0.09,0.06*clamp(1-d/70,0.12,1),'sine',panFrom(Math.atan2(sp.fuse.x-P.x,sp.fuse.z-P.z)));}
       G.fuseM.traverse(o=>{if(o.userData.glow)o.material.color.setScalar(0.55+0.45*Math.abs(Math.sin(S.t*2.4)));});}
     nbTick(G,dt);genAmbience(G,dt);
     if(G.cr)updateCreature(G,dt);};
