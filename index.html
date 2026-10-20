@@ -672,26 +672,34 @@ const CRAYON_C=mk(512,700);function drawCrayon(){const W=512,H=700,c=CRAYON_C,g=
   function cr(text,x,y,size,col,rot){k.save();k.translate(x,y);k.rotate(rot||0);k.font='bold '+size+'px '+FONT;k.textBaseline='middle';
     for(let i=0;i<4;i++){k.globalAlpha=0.5;k.fillStyle=col;k.fillText(text,(R()-0.5)*2.2,(R()-0.5)*2.2);}k.restore();k.globalAlpha=1;}
   function scrib(x1,y1,x2,y2,col,w){k.strokeStyle=col;k.lineWidth=w||3;k.lineCap='round';k.beginPath();k.moveTo(x1,y1);for(let t=0;t<=1;t+=0.1)k.lineTo(x1+(x2-x1)*t+(R()-0.5)*2,y1+(y2-y1)*t+(R()-0.5)*2);k.stroke();}
-  // nivel 2
-  cr('Nivel 2 o superior',30,62,36,'#2d5bb5',-0.02);cr('- En planeación',58,108,32,'#2d5bb5',-0.01);
-  scrib(24,140,480,136,'rgba(90,90,90,.5)',2);
+  // nivel 3 o superior
+  cr('Nivel 3 o superior',30,44,34,'#5a6a8a',-0.02);cr('- En planeación',58,86,30,'#5a6a8a',-0.01);
+  scrib(24,114,480,110,'rgba(90,90,90,.5)',2);
+  // nivel 2 + el ojo
+  cr('Nivel 2',30,150,34,'#7a4a1e',0.01);cr('- El salón de madera',58,192,30,'#7a4a1e',0);
+  {const ex=418,ey=168;k.save();k.beginPath();k.arc(ex,ey,38,0,7);k.clip();for(let i=-80;i<80;i+=4)scrib(ex-50+i,ey-50,ex-10+i,ey+50,'rgba(20,18,22,.9)',4);k.restore();
+    k.lineWidth=3;k.strokeStyle='#111';k.beginPath();k.arc(ex,ey,38,0,7);k.stroke();
+    k.fillStyle='#f6f2e6';k.beginPath();k.moveTo(ex-22,ey);k.quadraticCurveTo(ex,ey-17,ex+22,ey);k.quadraticCurveTo(ex,ey+17,ex-22,ey);k.fill();
+    k.fillStyle='#111';k.beginPath();k.arc(ex,ey,6,0,7);k.fill();
+    k.fillStyle='#f6f2e6';[[-18,-22],[18,-22],[-20,22],[20,22]].forEach(([a,b])=>{k.beginPath();k.arc(ex+a,ey+b,4,0,7);k.fill();});}
+  scrib(24,232,480,228,'rgba(90,90,90,.5)',2);
   // nivel 1 + patito
-  cr('Nivel 1',30,182,36,'#1e8fb0',0.01);cr('- Las Piscinas',58,228,32,'#1e8fb0',0);
-  {const dx=395,dy=210;k.save();k.beginPath();k.ellipse(dx,dy+18,48,30,0,0,7);k.arc(dx+30,dy-14,22,0,7);k.clip();
+  cr('Nivel 1',30,268,34,'#1e8fb0',0.01);cr('- Las Piscinas',58,310,30,'#1e8fb0',0);
+  {k.save();k.translate(406,292);k.scale(0.72,0.72);const dx=0,dy=0;k.save();k.beginPath();k.ellipse(dx,dy+18,48,30,0,0,7);k.arc(dx+30,dy-14,22,0,7);k.clip();
     for(let i=-90;i<120;i+=5)scrib(dx-70+i,dy-60,dx-20+i,dy+60,'rgba(242,200,24,.85)',4);k.restore();
     k.lineWidth=3;k.strokeStyle='#c99a00';k.beginPath();k.ellipse(dx,dy+18,48,30,0,0,7);k.stroke();k.beginPath();k.arc(dx+30,dy-14,22,0,7);k.stroke();
     k.fillStyle='#e8661e';k.beginPath();k.moveTo(dx+50,dy-18);k.lineTo(dx+74,dy-12);k.lineTo(dx+50,dy-6);k.closePath();k.fill();
     k.fillStyle='#111';k.beginPath();k.arc(dx+36,dy-20,4,0,7);k.fill();
     scrib(dx-46,dy+8,dx-62,dy-6,'#c99a00',3);scrib(dx-20,dy+10,dx+12,dy+14,'#c99a00',2.5);
-    for(let i=0;i<5;i++)scrib(dx-60+i*28,dy+54,dx-46+i*28,dy+52,'rgba(60,150,220,.7)',3);}
-  scrib(24,272,480,268,'rgba(90,90,90,.5)',2);
+    for(let i=0;i<5;i++)scrib(dx-60+i*28,dy+54,dx-46+i*28,dy+52,'rgba(60,150,220,.7)',3);k.restore();}
+  scrib(24,350,480,346,'rgba(90,90,90,.5)',2);
   // nivel 0
-  cr('Nivel 0',30,314,36,'#c97a12',-0.01);cr('- En progreso',58,360,32,'#c97a12',0.01);cr('(haciendo ajustes)',70,402,28,'#8a6a3a',0);
-  scrib(24,442,480,446,'rgba(90,90,90,.5)',2);
+  cr('Nivel 0',30,386,34,'#c97a12',-0.01);cr('- En progreso',58,428,30,'#c97a12',0.01);cr('(haciendo ajustes)',70,466,26,'#8a6a3a',0);
+  scrib(24,500,480,504,'rgba(90,90,90,.5)',2);
   // nivel -1
-  cr('Nivel -1 o inferior',30,486,36,'#b02a2a',0.015);cr('- Niveles aleatorios',58,532,32,'#b02a2a',0);cr('(haciendo ajustes)',70,574,28,'#7a3a6a',0);
+  cr('Nivel -1 o inferior',30,540,34,'#b02a2a',0.015);cr('- Niveles aleatorios',58,582,30,'#b02a2a',0);cr('(haciendo ajustes)',70,620,26,'#7a3a6a',0);
   // flechita y garabato
-  scrib(400,610,440,650,'#7a3a6a',3);scrib(440,650,452,618,'#7a3a6a',3);scrib(440,650,410,642,'#7a3a6a',3);
+  scrib(400,630,440,670,'#7a3a6a',3);scrib(440,670,452,638,'#7a3a6a',3);scrib(440,670,410,662,'#7a3a6a',3);
   // textura de crayón: quitar puntitos
   k.globalCompositeOperation='destination-out';for(let i=0;i<9000;i++){k.fillStyle='rgba(0,0,0,'+(0.25+R()*0.6)+')';k.fillRect(R()*W,R()*H,1+R()*1.5,1);}k.globalCompositeOperation='source-over';
   g.drawImage(L,0,0);
