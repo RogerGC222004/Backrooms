@@ -2183,6 +2183,15 @@ function nbTick(G,dt){if(G.tv)tvTick(dt);const cx=camera.position.x,cz=camera.po
     if(G.flash>0){G.flash-=dt;amb.intensity=G.flash>0.12||(G.flash>0&&G.flash<0.06)?1.4:G.baseAmb;if(G.flash<=0)amb.intensity=G.baseAmb;}}}
 
 GB.push(...Object.keys(NBIO));GIN.push(...NB_IN);Object.keys(NBIO).forEach(k=>{GNAMES[k]=NBIO[k].names;});
+// opciones de la criatura de un piso (las mismas al prepararla en el viaje y al construir el piso)
+function crOptFor(sp){const B=sp.biome,out=sp.outdoor,ICEIL=NBIO[B]&&NBIO[B].ceil?NBIO[B].ceil:B==='pegajoso'?3.4:B==='biblioteca'?4.4:B==='comercial'?5.2:B==='piscinas'?3.6:3.3;return out?{maxH:B==='bosque'?8:10,biome:B}:{maxH:ICEIL-0.35,maxR:0.65,biome:B,goo:sp.goo[0],ceil:ICEIL};}
+// optimización: durante el viaje se fabrica la criatura del piso de destino para dejar listas sus texturas de piel
+function prewarmFloor(n){if(n>=0||n===2)return;try{const sp=genSpec(n),C=makeCreature(sp.cseed,crOptFor(sp));disposeGeoms(C.root);}catch(e){}}
+function disposeGeoms(o){o.traverse(x=>{if(x.geometry)x.geometry.dispose();});}
+// optimización: antes de abrir las puertas se preparan los sombreadores y se suben texturas y mallas a la tarjeta de video
+const WARM_RT=new THREE.WebGLRenderTarget(4,4);
+function warmStep(k){try{if(k===2){renderer.compile(scene,camera);}else{const fc=[];scene.traverse(o=>{if((o.isMesh||o.isPoints||o.isLine||o.isSprite)&&o.frustumCulled){o.frustumCulled=false;fc.push(o);}});
+  const prev=renderer.getRenderTarget();renderer.setRenderTarget(WARM_RT);renderer.shadowMap.needsUpdate=renderer.shadowMap.enabled;renderer.render(scene,camera);renderer.setRenderTarget(prev);for(const o of fc)o.frustumCulled=true;}}catch(e){}}
 function buildGen(n){
   const sp=genSpec(n),grp=new THREE.Group(),sd=sp.seed,CH=24,B=sp.biome,half=sp.half,out=sp.outdoor,SEAB=B==='mar'||!!(NBIO[B]&&NBIO[B].sea);
   const G={group:grp,gen:true,spec:sp,obs:[],picks:[],inter:[],lights:[],chunks:new Map(),flick:[],amb:0,hum:0,vmA:0.3,vmS:0.35,fes:[]};
@@ -2215,7 +2224,7 @@ function buildGen(n){
     grp.add(new THREE.HemisphereLight(0xb8d0dc,0x1a1a1a,0.25));}
   // ---------- altura del terreno ----------
   const ICEIL=NBIO[B]&&NBIO[B].ceil?NBIO[B].ceil:B==='pegajoso'?3.4:B==='biblioteca'?4.4:B==='comercial'?5.2:B==='piscinas'?3.6:3.3;
-  G.crOpt=out?{maxH:B==='bosque'?8:10,biome:B}:{maxH:ICEIL-0.35,maxR:0.65,biome:B,goo:sp.goo[0],ceil:ICEIL};
+  G.crOpt=crOptFor(sp);
   const F=sp.fuse,elevD0=(x,z)=>Math.hypot(x,Math.max(0,z-4)*0.8+Math.max(0,-z-4)),PIER=B==='mar'?16:0;
   // elevadores perdidos: sitios en una rejilla grande (solo en pisos infinitos)
   const FSG=52,feCells=new Map();
@@ -3904,12 +3913,13 @@ function updateElev(dt){
   if(S.doorOpen<S.doorTarget)S.doorOpen=Math.min(S.doorTarget,S.doorOpen+sp);else if(S.doorOpen>S.doorTarget)S.doorOpen=Math.max(S.doorTarget,S.doorOpen-sp);
   const e=S.doorOpen<.5?2*S.doorOpen*S.doorOpen:1-Math.pow(-2*S.doorOpen+2,2)/2;
   doorL.position.x=-DH/2-DH*e;doorR.position.x=DH/2+DH*e;
-  if(S.elev==='closing'&&S.doorOpen<=0){S.elev='moving';S.moveT=0;S.moveDur=S.mdFix||2.6+Math.random()*0.8;motorStart();}
+  if(S.elev==='closing'&&S.doorOpen<=0){S.elev='moving';S.moveT=0;S.moveDur=S.mdFix||2.6+Math.random()*0.8;motorStart();const tg=S.target;setTimeout(()=>{if(S.elev==='moving'&&S.target===tg)prewarmFloor(tg);},120);}
   else if(S.elev==='moving'){S.moveT+=dt;
     if(S.moveT>=S.moveDur){S.floor=S.target;buildRoom(S.floor);if(S.reviveArm)setTimeout(coopRevive,600);if(S.drag&&S.dragPos){S.dragPos={x:P.x+Math.sin(P.yaw)*1.1,y:0,z:P.z+Math.cos(P.yaw)*1.1,fl:S.target};}motorStop();ding();
       [btnUp,btnDn].forEach(b=>{b.material.map=b.userData.dir>0?BT.up:BT.dn;b.material.needsUpdate=true;});if(MP.on&&S.state==='play'){P.y=0;P.vy=0;}
       $('#floorTag').textContent='PISO '+S.floor;card(S.floor);S.elev='opening';saveGame();
-      if(noPower()){setTimeout(()=>{S.powerFlick=1.4;noiseBurst(0.5,300,0.12);},1800);setTimeout(()=>{tone(220,0,.6,.1,'sawtooth');tone(110,.2,.8,.12,'sine');toast('El elevador se quedó sin energía');},3300);}S.doorTarget=1;setTimeout(()=>noiseBurst(1.2,700,.08),150);}}
+      if(noPower()){setTimeout(()=>{S.powerFlick=1.4;noiseBurst(0.5,300,0.12);},1800);setTimeout(()=>{tone(220,0,.6,.1,'sawtooth');tone(110,.2,.8,.12,'sine');toast('El elevador se quedó sin energía');},3300);}S.warm=2;S.doorTarget=0;}}
+  else if(S.elev==='opening'&&S.warm>0){warmStep(S.warm);S.warm--;if(!S.warm){S.doorTarget=1;setTimeout(()=>noiseBurst(1.2,700,.08),150);}}
   else if(S.elev==='opening'&&S.doorOpen>=1)S.elev='idle';
   const key=S.floor+'|'+S.elev+'|'+(S.elev==='moving'?Math.floor(S.t*3)%2:0)+'|'+(noPower()&&!(S.powerFlick>0));
   if(key!==S.lastDisp){S.lastDisp=key;drawDisplay();}
