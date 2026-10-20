@@ -1163,8 +1163,8 @@ function buildInfinite(){
       for(let x=h.x1-0.5;x<=h.x2+0.5&&!bad;x+=0.5)for(let z=h.z1-0.5;z<=h.z2+0.5;z+=0.5)if(zoneHit(L,x,z)){bad=true;break;}
       if(!bad)p.hole=h;}
     // elevador perdido (raro y lejos del inicio)
-    if(!cl&&!p.hole&&!p.stairs&&!stairsOf(cx,cz,L-1)&&Math.hypot(ox+6,oz+6)>46){const fr=rng(hash3(cx*91+L*7,cz*37-L*11,seed^0x7a11));
-      if(fr()<0.011){const i=Math.floor(fr()*3),j=Math.floor(fr()*3),r={x1:ox+i*CELL,x2:ox+(i+2)*CELL,z1:oz+j*CELL,z2:oz+(j+2)*CELL};let bad=false;
+    if(!cl&&!p.hole&&!p.stairs&&!stairsOf(cx,cz,L-1)&&Math.hypot(ox+6,oz+6)>40){const fr=rng(hash3(cx*91+L*7,cz*37-L*11,seed^0x7a11));
+      if(fr()<0.02){const i=Math.floor(fr()*3),j=Math.floor(fr()*3),r={x1:ox+i*CELL,x2:ox+(i+2)*CELL,z1:oz+j*CELL,z2:oz+(j+2)*CELL};let bad=false;
         for(let x=r.x1;x<=r.x2&&!bad;x+=1)for(let z=r.z1;z<=r.z2;z+=1)if(zoneHit(L,x,z)){bad=true;break;}
         if(!bad)p.fe={r:r,x:(r.x1+r.x2)/2,z:(r.z1+r.z2)/2,yaw:Math.floor(fr()*4)*Math.PI/2,seed:hash3(cx,cz,seed+L*31+5),key:'0:'+cx+','+cz+','+L};}}
     plans.set(k,p);if(plans.size>4000){const keep=p;plans.clear();plans.set(k,keep);}return p;}
@@ -1917,9 +1917,9 @@ function buildGen(n){
   // elevadores perdidos: sitios en una rejilla grande (solo en pisos infinitos)
   const FSG=72,feCells=new Map();
   function feCell(i,j){const k=i+','+j;if(feCells.has(k))return feCells.get(k);let st=null;
-    if(sp.inf){const r=rng(hash3(i,j,sd+9157));if(r()<0.34){let x=i*FSG+10+r()*(FSG-20),z=j*FSG+10+r()*(FSG-20);const yaw=Math.floor(r()*4)*Math.PI/2,u=r();
+    if(sp.inf){const r=rng(hash3(i,j,sd+9157));if(r()<0.55){let x=i*FSG+10+r()*(FSG-20),z=j*FSG+10+r()*(FSG-20);const yaw=Math.floor(r()*4)*Math.PI/2,u=r();
       if(B==='hotel')z=Math.round(z/12)*12;if(B==='comercial')x=Math.round(x/22)*22;if(B==='ciudad'){if(u<0.5)x=Math.round(x/44)*44;else z=Math.round(z/44)*44;}
-      if(Math.hypot(x,z)>55)st={x:x,z:z,yaw:yaw,seed:hash3(i,j,sd+4411),key:n+':'+i+','+j};}}
+      if(Math.hypot(x,z)>48)st={x:x,z:z,yaw:yaw,seed:hash3(i,j,sd+4411),key:n+':'+i+','+j};}}
     feCells.set(k,st);if(feCells.size>400)feCells.clear();return st;}
   function feNear(x,z,R){const out=[];for(let i=Math.floor((x-R)/FSG);i<=Math.floor((x+R)/FSG);i++)for(let j=Math.floor((z-R)/FSG);j<=Math.floor((z+R)/FSG);j++){const st=feCell(i,j);if(st&&Math.abs(st.x-x)<R&&Math.abs(st.z-z)<R)out.push(st);}return out;}
   const feD=(x,z)=>{if(!sp.inf)return 1e9;let d=1e9;for(const st of feNear(x,z,20))d=Math.min(d,Math.hypot(x-st.x,z-st.z));return d;};
