@@ -2365,7 +2365,7 @@ function crGrin(kind){const k='grin'+kind;if(CRS[k])return CRS[k];const c=mk(256
     if(R()<0.85){g.fillStyle=col;g.beginPath();g.moveTo(x-w,yB+1);g.lineTo(x+w,yB+1);g.lineTo(x+(R()-0.5)*3,yB-l);g.fill();}}
   g.strokeStyle='rgba(220,230,240,.5)';g.lineWidth=1.5;for(let i=0;i<4;i++){const x=40+R()*170;g.beginPath();g.moveTo(x,40+R()*20);g.quadraticCurveTo(x+5,70,x+(R()-0.5)*6,80+R()*14);g.stroke();}
   const t=new THREE.CanvasTexture(c);KEEP.add(t);CRS[k]=t;return t;}
-function makeCreature(seed,opt){opt=opt||{};const r=rng(seed),pick=a=>a[Math.floor(r()*a.length)],rr=(a,b)=>a+r()*(b-a),ch=p=>r()<p;
+function makeCreature(seed,opt){opt=opt||{};const seedA=seed;const r=rng(seed),pick=a=>a[Math.floor(r()*a.length)],rr=(a,b)=>a+r()*(b-a),ch=p=>r()<p;
   const loco=pick(['bipedo','bipedo','alto','cuadrupedo','arana','flotante','reptante','cienpies','serpiente','nudillos','tripode']);
   const Hb=loco==='alto'?rr(3,4.2):loco==='arana'?rr(1,2):loco==='flotante'?rr(1.6,2.8):loco==='cuadrupedo'?rr(0.9,1.6):loco==='reptante'?rr(0.55,0.9):loco==='cienpies'?rr(0.6,1.1):loco==='serpiente'?rr(0.5,0.9):loco==='tripode'?rr(2.5,4):loco==='nudillos'?rr(1.6,2.5):rr(1.5,2.4);
   const sz=r();let K=sz<0.16?rr(0.28,0.55):sz<0.8?rr(0.8,1.35):rr(1.8,3.4);
@@ -2385,7 +2385,7 @@ function makeCreature(seed,opt){opt=opt||{};const r=rng(seed),pick=a=>a[Math.flo
   const skin2=new THREE.MeshPhongMaterial({color:col2,map:rep2(SK2.map,1.5,1),bumpMap:rep2(SK2.bump,1.5,1),bumpScale:0.02,shininess:shin,specular:0x222222});
   const dark=new THREE.MeshPhongMaterial({color:col.clone().multiplyScalar(0.4),shininess:8}),bone=new THREE.MeshPhongMaterial({color:0xd9d0b8,shininess:30});
   const root=new THREE.Group(),body=new THREE.Group();root.add(body);
-  const C={root:root,body:body,legs:[],arms:[],tend:[],segs:[],eyes:[],blink:[],bulbs:[],kind:loco,Hb:Hb,ph:0,t:r()*9,parts:{loco:loco,piel:style}};C.parts.textura=skinK;
+  const C={seedA:seedA,root:root,body:body,legs:[],arms:[],tend:[],segs:[],eyes:[],blink:[],bulbs:[],kind:loco,Hb:Hb,ph:0,t:r()*9,parts:{loco:loco,piel:style}};C.parts.textura=skinK;
   C.claws=ch(0.55);C.spurs=ch(0.25);C.wraps=ch(0.2);const wrapM=new THREE.MeshPhongMaterial({color:pick([0xd8d0b8,0x9a8a6a,0x5a1a14]),shininess:4});
   const asy=ch(0.45)?rr(0.1,0.35):0,av=()=>1+(r()-0.5)*2*asy;C.twitch=ch(0.35);
   const sph=(rad,sx,sy,sz2,m)=>{const o=new THREE.Mesh(new THREE.SphereGeometry(rad,14,10),m);o.scale.set(sx,sy,sz2);return o;};
@@ -2577,24 +2577,74 @@ function makeCreature(seed,opt){opt=opt||{};const r=rng(seed),pick=a=>a[Math.flo
   const sk=clamp(Math.sqrt(k),0.7,1.4);C.walk=rr(1.0,1.9)*sk;C.run=(C.beh==='acechador'?rr(4.2,6):C.beh==='cazador'?rr(3.7,4.3):rr(3.5,4.2))*clamp(0.8+0.2*k,0.85,1.05);
   C.voice={base:rr(60,520)/Math.sqrt(Math.max(0.3,k)),type:pick(['sawtooth','square','triangle','sine']),fm:rr(0,1),len:rr(0.4,1.4)*clamp(Math.sqrt(k),0.6,1.6),q:rr(1,8),every:rr(6,15)};
   return C;}
-function animCreature(C,dt,spd){const Hb=C.Hb||C.H,mv=clamp(spd/Math.max(0.6,C.walk),0,2.2);C.t+=dt;C.ph+=dt*spd*(C.kind==='arana'||C.kind==='cienpies'?3.2:2.4)/Math.max(0.3,C.H*0.4);const a=0.55*Math.min(1,mv);
-  for(const L of C.legs){const p=C.ph+L.off;if(L.tri!=null){L.hip.rotation.x=-0.45+Math.sin(p)*a*0.5;L.knee.rotation.x=0.3+Math.max(0,Math.cos(p))*a*0.5;continue;}if(L.spider){L.hip.rotation.x=Math.sin(p)*a*0.6;L.knee.rotation.x=Math.max(0,Math.cos(p))*a*0.4;}else{L.hip.rotation.x=Math.sin(p)*a;L.knee.rotation.x=Math.max(0,-Math.cos(p))*a*1.3;}}
-  for(const Ar of C.arms){if(Ar.wing){Ar.sh.rotation.z=Ar.side*(Math.sin(C.t*(mv>0.5?7:2))*0.35);continue;}if(Ar.knuckle){const p=C.ph+(Ar.off||0);Ar.sh.rotation.x=-0.35+Math.sin(p)*a*0.8;Ar.el.rotation.x=-0.2-Math.max(0,Math.cos(p))*a*0.5;continue;}
-    if(Ar.crawl){const p=C.ph*0.5+Ar.off;Ar.sh.rotation.x=-1.2+Math.sin(p)*0.6*Math.min(1,mv+0.1);Ar.el.rotation.x=-0.4-Math.max(0,Math.cos(p))*0.6;}
-    else{Ar.sh.rotation.x=Math.sin(C.ph+(Ar.off||0)+Math.PI)*a*0.6+Math.sin(C.t*0.9+Ar.side)*0.06;Ar.el.rotation.x=-0.15-Math.abs(Math.sin(C.ph))*a*0.3;}}
-  for(const T2 of C.tend){if(T2.tail){T2.g.rotation.y=Math.sin(C.t*2+T2.ph)*0.3;T2.g.rotation.x=Math.sin(C.t*1.3+T2.ph)*0.1;}else{T2.g.rotation.x=Math.sin(C.t*1.6+T2.ph)*0.25;T2.g.rotation.z=Math.cos(C.t*1.2+T2.ph)*0.2;}}
-  const ser=C.kind==='serpiente';for(let i=0;i<C.segs.length;i++)C.segs[i].rotation.y=i?Math.sin((ser?C.ph*0.9+C.t*0.5:C.ph*0.5)-i*0.7)*(ser?0.35:0.25)*Math.min(1,mv+(ser?0.4:0.15)):0;
+function crAnimInit(C){const r=rng((C.seedA||12345)+999),pick=a=>a[Math.floor(r()*a.length)];
+  const bip=C.legs.length===2&&!C.legs[0].spider&&C.legs[0].tri==null;
+  C.gait=bip?pick(['normal','normal','cojea','arrastra','saltos','tambaleo','espasmo','glitch','rigido']):pick(['normal','normal','normal','espasmo','glitch','tambaleo']);
+  C.armSt=pick(['colgando','balanceo','temblor','buscando']);C.brR=0.6+r()*1.4;C.reach=C.agr&&r()<0.75;C.badLeg=r()<0.5?0:1;C.lookA=0;C.lookT=2;C.sm=0;C.jk={};C.jkT=0;C.frz=0;C.frzT=2+r()*4;C.yell=0;C.pyaw=C.yaw||0;C.lean=0;C.roll=0;C.hb=0;
+  C.parts.andar=C.gait;C.animOk=true;}
+function animCreature(C,dt,spd){if(!C.animOk)crAnimInit(C);const Hb=C.Hb||C.H;C.sm+=(spd-C.sm)*Math.min(1,dt*6);const sp=C.sm,mv=clamp(sp/Math.max(0.6,C.walk),0,2.2),run=clamp((mv-1.1)/0.6,0,1);C.t+=dt;
+  // congelarse a ratos (glitch): la pose se queda fija aunque siga moviéndose
+  if(C.gait==='glitch'){C.frzT-=dt;if(C.frz>0){C.frz-=dt;C.body.position.x=(Math.random()-0.5)*0.03*Hb;if(C.frz<=0){C.frzT=1+Math.random()*4;C.ph+=Math.random()*2;}return animExtras(C,dt,mv);}if(C.frzT<=0){C.frz=0.15+Math.random()*0.5;return animExtras(C,dt,mv);}C.body.position.x=0;}
+  // espasmos: pequeños tirones al azar en cada articulación
+  C.jkT-=dt;if(C.jkT<=0){C.jkT=C.gait==='espasmo'?0.06+Math.random()*0.5:0.8+Math.random()*3;const k=C.gait==='espasmo'?0.55:0.12;C.jk={a:(Math.random()-0.5)*k,b:(Math.random()-0.5)*k,c:(Math.random()-0.5)*k};}
+  const J=C.jk;let fr=(C.kind==='arana'||C.kind==='cienpies'?3.2:2.4)*(1+run*0.25);if(C.gait==='saltos')fr*=0.7;if(C.gait==='arrastra')fr*=0.8;
+  let dph=dt*sp*fr/Math.max(0.3,C.H*0.4);if(C.gait==='cojea'){const p0=C.ph+C.legs[C.badLeg].off;dph*=Math.sin(p0)>0?1.5:0.7;}C.ph+=dph;
+  const a=(0.55+run*0.35)*Math.min(1,mv);
+  // piernas
+  C.legs.forEach((L,i)=>{if(L.bz==null){L.bz=L.hip.rotation.z;L.bkz=L.knee.rotation.z;}let p=C.ph+L.off;
+    if(L.tri!=null){L.hip.rotation.x=-0.45+Math.sin(p)*a*0.5+J.a*0.3;L.knee.rotation.x=0.3+Math.max(0,Math.cos(p))*a*0.5;return;}
+    if(L.spider){const lift=Math.max(0,Math.cos(p));L.hip.rotation.x=Math.sin(p)*a*0.6;L.hip.rotation.z=L.bz+(L.bz>0?-1:1)*lift*a*0.35;L.knee.rotation.x=lift*a*0.4;L.knee.rotation.z=L.bkz+(L.bkz>0?1:-1)*lift*a*0.25+J.b*0.2;return;}
+    if(C.gait==='saltos'){p=C.ph;const s=Math.sin(p);L.hip.rotation.x=-0.25*Math.min(1,mv)-Math.max(0,-s)*0.5*a;L.knee.rotation.x=(0.5+Math.max(0,-s)*0.8)*Math.min(1,mv)+0.1;return;}
+    let A1=a,K=1.3;const bad=i===C.badLeg;
+    if(C.gait==='cojea'&&bad){A1*=0.45;K=0.5;}if(C.gait==='arrastra'&&bad){L.hip.rotation.x=0.35*Math.min(1,mv)+Math.sin(p)*0.08;L.knee.rotation.x=0.05;L.hip.rotation.z=L.bz+0.12;return;}
+    if(C.gait==='rigido'){A1*=0.8;K=0.15;}
+    L.hip.rotation.x=Math.sin(p)*A1+(i?J.a:J.b)*0.4-run*0.15;L.knee.rotation.x=Math.max(0,-Math.cos(p))*A1*K*(1+run*0.4)+Math.max(0,J.c)*0.3;});
+  // brazos
+  for(const Ar of C.arms){if(Ar.bz==null)Ar.bz=Ar.sh.rotation.z;
+    if(Ar.wing){const f=mv>0.5?7+run*5:1.6;Ar.sh.rotation.z=Ar.side*(Math.sin(C.t*f)*(0.25+mv*0.15));Ar.sh.rotation.x=Math.sin(C.t*f*0.5)*0.1;continue;}
+    if(Ar.knuckle){const p=C.ph+(Ar.off||0);Ar.sh.rotation.x=-0.35+Math.sin(p)*a*0.8;Ar.el.rotation.x=-0.2-Math.max(0,Math.cos(p))*a*0.5;continue;}
+    if(Ar.crawl){const p=C.ph*0.5+Ar.off;Ar.sh.rotation.x=-1.2+Math.sin(p)*0.6*Math.min(1,mv+0.1);Ar.el.rotation.x=-0.4-Math.max(0,Math.cos(p))*0.6;continue;}
+    let x,e,z=Ar.bz;
+    if(C.reach&&run>0.2){const w=Math.sin(C.t*9+Ar.side)*0.12;x=-1.35*run+w;e=-0.25+Math.sin(C.t*11+Ar.side*2)*0.25;z=Ar.bz*0.3;}
+    else if(C.gait==='rigido'){x=Math.sin(C.t*0.4+Ar.side)*0.02;e=0;}
+    else{const sw=Math.sin(C.ph+(Ar.off||0)+Math.PI)*a*0.6;let idle=0,ie=0;
+      if(C.armSt==='balanceo')idle=Math.sin(C.t*0.9+Ar.side)*0.12;else if(C.armSt==='temblor'){idle=(Math.random()-0.5)*0.05;ie=(Math.random()-0.5)*0.08;}
+      else if(C.armSt==='buscando'){idle=-0.5-Math.sin(C.t*0.7+Ar.side*1.7)*0.35;ie=-0.6+Math.sin(C.t*1.3+Ar.side)*0.3;}
+      const k=1-Math.min(1,mv);x=sw+idle*k+J.a*0.5;e=-0.15-Math.abs(Math.sin(C.ph))*a*0.3+ie*k+J.c*0.5;}
+    Ar.sh.rotation.x+=(x-Ar.sh.rotation.x)*Math.min(1,dt*10);Ar.el.rotation.x+=(e-Ar.el.rotation.x)*Math.min(1,dt*10);Ar.sh.rotation.z+=(z-Ar.sh.rotation.z)*Math.min(1,dt*6);}
+  // tentáculos: onda que viaja por el tentáculo y se va hacia atrás al moverse
+  for(const T2 of C.tend){if(T2.tail){T2.g.rotation.y=Math.sin(C.t*(2+mv*2)+T2.ph)*(0.3+mv*0.15);T2.g.rotation.x=Math.sin(C.t*1.3+T2.ph)*0.12-mv*0.05;}
+    else{T2.g.rotation.x=Math.sin(C.t*(1.6+mv)-T2.ph*1.4)*(0.25+mv*0.12)+mv*0.12;T2.g.rotation.z=Math.cos(C.t*1.2-T2.ph)*0.22+J.b*0.3;}}
+  const ser=C.kind==='serpiente';for(let i=0;i<C.segs.length;i++){const s=C.segs[i];if(!i){s.rotation.y=0;continue;}s.rotation.y=Math.sin((ser?C.ph*0.9+C.t*0.6:C.ph*0.5)-i*0.7)*(ser?0.38:0.25)*Math.min(1,mv+(ser?0.45:0.15));if(ser)s.rotation.x=Math.sin(C.t*1.1-i*0.9)*0.04;}
+  // cuerpo: respirar, inclinarse al correr y al girar, tambalearse, rebotar
+  let dy=(C.yaw||0)-C.pyaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));C.pyaw=C.yaw||0;const yr=clamp(dy/Math.max(dt,0.001),-3,3);
+  const still=sp<0.05&&(C.beh==='observador'||C.beh==='imitador');const br=still?0:Math.sin(C.t*C.brR*2.2);C.body.scale.set(1+br*0.012,1+br*0.018,1+br*0.012);
+  const upright=C.legs.length===2&&C.kind!=='nudillos';
+  const lean=(upright?0.1:0.04)*Math.min(mv,1.5)+run*(upright?0.1:0.03)+(C.reach&&run>0.2?0.06:0);C.lean+=(lean-C.lean)*Math.min(1,dt*4);
+  let roll=-yr*0.05*Math.min(1,mv);if(C.gait==='tambaleo')roll+=Math.sin(C.t*1.3)*0.1+Math.sin(C.ph*0.5)*0.08*Math.min(1,mv);if(C.gait==='cojea')roll+=Math.sin(C.ph+C.legs[C.badLeg].off)*0.07*Math.min(1,mv);
+  if(C.gait==='arrastra')roll+=(C.badLeg?-1:1)*0.09;C.roll+=(roll-C.roll)*Math.min(1,dt*5);
+  C.body.rotation.x=C.lean+(C.gait==='espasmo'?J.a*0.25:0);C.body.rotation.z=C.roll+(C.gait==='espasmo'?J.b*0.2:0);
+  let by;if(C.kind==='flotante')by=Hb*0.15+Math.sin(C.t*1.4)*Hb*0.05+Math.sin(C.t*0.53)*Hb*0.03;
+  else if(C.gait==='saltos')by=Math.max(0,Math.sin(C.ph))*0.16*Hb*Math.min(1,mv);
+  else by=Math.abs(Math.sin(C.ph))*(0.04+run*0.03)*Hb*Math.min(1,mv)-(C.gait==='cojea'&&Math.sin(C.ph+C.legs[C.badLeg].off)<0?0.03*Hb*Math.min(1,mv):0);
+  C.body.position.y=by;if(C.kind==='flotante')C.body.rotation.y=Math.sin(C.t*0.4)*0.15;
+  return animExtras(C,dt,mv);}
+function animExtras(C,dt,mv){
   if(C.halo)C.halo.rotation.z+=dt*0.8;if(C.cape)C.cape.rotation.x=(C.cape.rotation.x<-0.5?-1.1:0)+0.12+Math.sin(C.t*1.7)*0.06+Math.min(0.5,mv*0.25);
   if(C.tv)tvTick(dt);if(C.core)C.core.material.color.offsetHSL(dt*0.05,0,0);
   if(C.blink.length){C.blT=(C.blT||0)-dt;if(C.blT<=0){C.blT=C.blOn?0.12:0.6+Math.random()*3;C.blOn=!C.blOn;for(const m of C.blink)m.visible=!C.blOn;}}
-  if(C.jaw)C.jaw.rotation.x=Math.max(0,Math.sin(C.t*7))*0.25;
+  C.yell=Math.max(0,(C.yell||0)-dt);
+  if(C.jaw)C.jaw.rotation.x=C.yell>0?0.55+Math.sin(C.t*30)*0.06:Math.max(0,Math.sin(C.t*7))*0.25*(mv>0.2?1:0.3);
   if(C.bulbs.length){C.bT=(C.bT||0)-dt;if(C.bT<=0){C.bT=0.12+Math.random()*0.5;for(const b of C.bulbs)b.visible=Math.random()<0.78;}}
   if(C.light&&Math.random()<dt*4)C.light.intensity=0.6+Math.random()*0.5;
-  if(C.twitch&&C.head){C.twT=(C.twT||0)-dt;if(C.twT<=0){C.twT=0.3+Math.random()*2.5;C.head.rotation.z=(C.tilt||0)+(Math.random()-0.5)*0.9;C.head.rotation.x=(Math.random()-0.5)*0.5;}}
-  C.body.position.y=C.kind==='flotante'?Hb*0.15+Math.sin(C.t*1.4)*Hb*0.05:Math.abs(Math.sin(C.ph))*0.04*Hb*Math.min(1,mv);
+  // cabeza: mira alrededor cuando estás lejos, tirones, y se echa hacia atrás al gritar
+  C.lookT-=dt;if(C.lookT<=0){C.lookT=1.5+Math.random()*4;C.lookA=(Math.random()-0.5)*1.6;}
+  if(C.head){if(C.twitch){C.twT=(C.twT||0)-dt;if(C.twT<=0){C.twT=0.3+Math.random()*2.5;C.twZ=(C.tilt||0)+(Math.random()-0.5)*0.9;C.twX=(Math.random()-0.5)*0.5;}}
+    const tz=C.twitch?C.twZ||0:(C.tilt||0)+Math.sin(C.t*0.7)*0.05,tx=(C.twitch?C.twX||0:0)-(C.yell>0?0.45:0)-C.lean*0.6+Math.sin(C.ph*2)*0.04*Math.min(1,mv);
+    const k=C.twitch?Math.min(1,dt*25):Math.min(1,dt*4);C.head.rotation.z+=(tz-C.head.rotation.z)*k;C.head.rotation.x+=(tx-C.head.rotation.x)*k;}
   for(const e of C.eyes)e.lookAt(camera.position);}
 
-function crVoice(C,vol,pan,scream){if(!A.ctx)return;const v=C.voice,t=A.ctx.currentTime,len=scream?0.9:v.len,f0=scream?v.base*1.6:v.base;const o=A.ctx.createOscillator(),m=A.ctx.createOscillator(),mg=A.ctx.createGain(),bp=A.ctx.createBiquadFilter(),g=A.ctx.createGain();
+function crVoice(C,vol,pan,scream){C.yell=scream?0.9:Math.max(C.yell||0,0.4);if(!A.ctx)return;const v=C.voice,t=A.ctx.currentTime,len=scream?0.9:v.len,f0=scream?v.base*1.6:v.base;const o=A.ctx.createOscillator(),m=A.ctx.createOscillator(),mg=A.ctx.createGain(),bp=A.ctx.createBiquadFilter(),g=A.ctx.createGain();
   o.type=v.type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f0*(scream?0.6:0.75+Math.random()*0.5),t+len);m.frequency.value=4+v.fm*40;mg.gain.value=f0*v.fm*0.5;m.connect(mg);mg.connect(o.frequency);
   bp.type='bandpass';bp.frequency.value=f0*2.2;bp.Q.value=v.q*0.4;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(0.0003,vol),t+0.06);g.gain.setValueAtTime(Math.max(0.0003,vol),t+len*0.6);g.gain.exponentialRampToValueAtTime(0.0001,t+len);
   o.connect(bp);bp.connect(g);let out=g;if(A.ctx.createStereoPanner){const p=A.ctx.createStereoPanner();p.pan.value=clamp(pan,-1,1);g.connect(p);out=p;}out.connect(scream&&A.fx?A.fx:A.master);if(A.echoIn)out.connect(A.echoIn);o.start(t);m.start(t);o.stop(t+len+0.05);m.stop(t+len+0.05);}
@@ -2653,7 +2703,7 @@ function updateCreature(G,dt){const C=G.cr;if(!C)return;const host=!MP.on||MP.ho
       animCreature(C,dt,Math.hypot(C.x-ox,C.z-oz)/Math.max(dt,0.001));}}
   if(host)C.y+=(crGroundY(G,C.x,C.z)-C.y)*Math.min(1,dt*6);C.root.position.set(C.x,C.y,C.z);C.root.rotation.y=C.yaw;
   if(G.surfaceAt&&(C.spd>0.3||(!host&&C.root.position.distanceToSquared(P)<3600))){const sy=G.surfaceAt(C.x,C.z,C.y+1);if(sy!=null&&C.y<sy+0.3){C.wT=(C.wT||0)-dt;if(C.wT<=0){C.wT=0.35;if(C.spd>0.3||host===false)waterRipple(C.x,C.z,0.06+Math.min(0.12,C.H*0.03),sy);}}}
-  if(C.head){let a=Math.atan2(P.x-C.x,P.z-C.z)-C.yaw;a=Math.atan2(Math.sin(a),Math.cos(a));C.head.rotation.y+=(clamp(a,-1,1)*(myD<30?1:0)-C.head.rotation.y)*Math.min(1,dt*3);}
+  if(C.head){let a=Math.atan2(P.x-C.x,P.z-C.z)-C.yaw;a=Math.atan2(Math.sin(a),Math.cos(a));C.head.rotation.y+=((myD<30?clamp(a,-1,1):C.lookA||0)-C.head.rotation.y)*Math.min(1,dt*3);}
   // pasos y voz
   if(C.spd>0.2&&C.legs.length){const ph=Math.floor(C.ph/Math.PI);if(ph!==C.lastPh){C.lastPh=ph;if(hear>0.04)stepSnd(0,Math.min(1.6,(0.05+C.H*0.05)*hear*stepGain()),pan);}}
   C.vT=(C.vT==null?C.voice.every*Math.random():C.vT)-dt;if(C.vT<=0){C.vT=C.voice.every*(0.6+Math.random()*0.8);if(hear>0.05&&S.state==='play')crVoice(C,0.09*hear,pan,false);}
