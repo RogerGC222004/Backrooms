@@ -3142,7 +3142,41 @@ function makeCreature(seed,opt){opt=opt||{};const seedA=seed;const r=rng(seed),p
   if(agr&&C.qa<0.85){const opts=opt.ceil?(C.canCeil?['techo','techo','pared','suelo']:['pared','suelo','salto']):['suelo','salto','salto'];if(C.fly)opts.push('aire','aire');C.ambush=opts[Math.floor(C.qa*97%1*opts.length)];C.parts.emboscada=C.ambush;}
   const sk=clamp(Math.sqrt(k),0.7,1.4);C.walk=rr(1.0,1.9)*sk;C.run=(C.beh==='acechador'?rr(4.2,6):C.beh==='cazador'?rr(3.7,4.3):rr(3.5,4.2))*clamp(0.8+0.2*k,0.85,1.05);
   C.voice={base:rr(60,520)/Math.sqrt(Math.max(0.3,k)),type:pick(['sawtooth','square','triangle','sine']),fm:rr(0,1),len:rr(0.4,1.4)*clamp(Math.sqrt(k),0.6,1.6),q:rr(1,8),every:rr(6,15)};
+  if(!opt.noBake)crBake(C);
   return C;}
+// optimización: las piezas de la criatura que no se mueven entre sí (mismo material, mismo padre) se juntan en una sola malla.
+// Se ve idéntico: cada pieza conserva su forma y posición exacta, solo que se dibuja junto con sus vecinas.
+function crBake(C){const ref=new Set(),seen=new Set();
+  const scan=(v,d)=>{if(!v||typeof v!=='object'||seen.has(v)||d>5)return;seen.add(v);if(v.isObject3D){ref.add(v);return;}if(v.isMaterial||v.isTexture||v.isBufferGeometry||v.isColor||v.isVector3)return;
+    if(Array.isArray(v)){for(const x of v)scan(x,d+1);return;}for(const k in v){if(k==='root'&&d===0)continue;scan(v[k],d+1);}};
+  scan(C,0);
+  const udOk=o=>{const k=Object.keys(o.userData);return k.length===0||(k.length===1&&o.userData.hair===true);};
+  const leafOk=m=>m.isMesh&&!m.isSkinnedMesh&&!m.isInstancedMesh&&!m.children.length&&!ref.has(m)&&m.visible&&udOk(m)&&!Array.isArray(m.material)&&m.onBeforeRender===THREE.Object3D.prototype.onBeforeRender&&m.geometry&&!Object.keys(m.geometry.morphAttributes).length&&!Object.values(m.geometry.attributes).some(at=>at.isInterleavedBufferAttribute||!(at.array instanceof Float32Array));
+  // las piezas sueltas dentro de grupos que nunca se animan suben al grupo que sí se mueve (su forma se fija en la geometría)
+  const bakeInto=(m,mat)=>{let g=m.geometry.clone();g.applyMatrix4(mat);if(!g.index){const n=g.attributes.position.count,ix=new Uint32Array(n);for(let i=0;i<n;i++)ix[i]=i;g.setIndex(new THREE.BufferAttribute(ix,1));}
+    if(mat.determinant()<0){const a=g.index.array;for(let i=0;i<a.length;i+=3){const t=a[i+1];a[i+1]=a[i+2];a[i+2]=t;}}m.geometry=g;m.position.set(0,0,0);m.quaternion.identity();m.scale.set(1,1,1);m.updateMatrix();};
+  for(let pass=0;pass<6;pass++){let moved=0;const groups=[];C.root.traverse(o=>{if(o!==C.root&&!o.isLight&&o.parent&&o.children.length&&!ref.has(o)&&o.visible&&udOk(o)&&!o.isSkinnedMesh)groups.push(o);});
+    for(const G2 of groups){G2.updateMatrix();for(const m of G2.children.slice()){if(!leafOk(m)||m.material.transparent)continue;m.updateMatrix();bakeInto(m,new THREE.Matrix4().multiplyMatrices(G2.matrix,m.matrix));G2.remove(m);G2.parent.add(m);moved++;}}
+    if(!moved)break;}
+  {const empty=[];C.root.traverse(o=>{if(o!==C.root&&!o.isMesh&&!o.isLight&&!o.children.length&&!ref.has(o)&&Object.keys(o.userData).length===0&&o.type==='Group')empty.push(o);});for(const o of empty)if(o.parent)o.parent.remove(o);}
+  const parents=[];C.root.traverse(o=>{if(o.children.length>1)parents.push(o);});let before=0,after=0;
+  for(const par of parents){const groups=new Map();
+    for(const m of par.children){if(!leafOk(m)||m.material.transparent)continue;
+      const g=m.geometry;if(!g||!g.attributes.position||Object.keys(g.morphAttributes).length||Object.values(g.attributes).some(at=>at.isInterleavedBufferAttribute||!(at.array instanceof Float32Array)))continue;
+      const an=Object.keys(g.attributes).sort().join(',');const key=m.material.uuid+'|'+(m.userData.hair?'h':'')+'|'+m.castShadow+'|'+m.receiveShadow+'|'+m.renderOrder+'|'+m.frustumCulled+'|'+an;
+      if(!groups.has(key))groups.set(key,[]);groups.get(key).push(m);}
+    for(const list of groups.values()){if(list.length<2)continue;before+=list.length;after++;
+      const parts=[];let nv=0,ni=0;
+      for(const m of list){m.updateMatrix();let g=m.geometry.clone();g.applyMatrix4(m.matrix);if(!g.index){const n=g.attributes.position.count,idx=new Uint32Array(n);for(let i=0;i<n;i++)idx[i]=i;g.setIndex(new THREE.BufferAttribute(idx,1));}
+        if(m.matrix.determinant()<0){const a=g.index.array;for(let i=0;i<a.length;i+=3){const t=a[i+1];a[i+1]=a[i+2];a[i+2]=t;}}
+        parts.push(g);nv+=g.attributes.position.count;ni+=g.index.count;}
+      const out=new THREE.BufferGeometry(),names=Object.keys(parts[0].attributes);
+      for(const nm of names){const sz=parts[0].attributes[nm].itemSize,arr=new Float32Array(nv*sz);let o=0;for(const g of parts){const at=g.attributes[nm];for(let i=0;i<at.count;i++)for(let k=0;k<sz;k++)arr[o++]=at.array[i*sz+k];}out.setAttribute(nm,new THREE.BufferAttribute(arr,sz,parts[0].attributes[nm].normalized));}
+      const idx=nv>65535?new Uint32Array(ni):new Uint16Array(ni);let o=0,base=0;for(const g of parts){const a=g.index.array;for(let i=0;i<g.index.count;i++)idx[o++]=a[i]+base;base+=g.attributes.position.count;g.dispose();}
+      out.setIndex(new THREE.BufferAttribute(idx,1));out.computeBoundingSphere();
+      const f=list[0],mm=new THREE.Mesh(out,f.material);if(f.userData.hair)mm.userData.hair=true;mm.castShadow=f.castShadow;mm.receiveShadow=f.receiveShadow;mm.renderOrder=f.renderOrder;mm.frustumCulled=f.frustumCulled;
+      const at=par.children.indexOf(f);for(const m of list)par.remove(m);par.add(mm);par.children.splice(par.children.indexOf(mm),1);par.children.splice(Math.min(at,par.children.length),0,mm);}}
+  C.bake=[before,after];}
 const _crv=new THREE.Vector3();
 function crAnimInit(C){const r=rng((C.seedA||12345)+999),pick=a=>a[Math.floor(r()*a.length)];
   const bip=C.legs.length===2&&!C.legs[0].spider&&C.legs[0].tri==null;
