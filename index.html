@@ -1099,7 +1099,12 @@ function updateEbox(dt){EBOX.open+=(EBOX.target-EBOX.open)*Math.min(1,dt*6);EBOX
 
 /* ---------- Pisos ---------- */
 let room=null;
-function disposeGroup(g){g.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{if(m.map&&m.map!==dispTex&&!KEEP.has(m.map))m.map.dispose();m.dispose();});}});}
+const TEX_SLOTS=['map','bumpMap','emissiveMap','alphaMap','normalMap','specularMap','aoMap','lightMap'];
+function disposeMat(m){for(const k of TEX_SLOTS){const t=m[k];if(t&&t.isTexture&&t!==dispTex&&!KEEP.has(t))t.dispose();}m.dispose();}
+function disposeGroup(g){g.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(disposeMat);}});}
+// al descargar un trozo del mapa, se liberan sus materiales y texturas si ningún otro objeto los usa
+function disposeChunkG(g,live){const lm=new Set(),lt=new Set();live.traverse(o=>{if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{lm.add(m);for(const k of TEX_SLOTS)if(m[k])lt.add(m[k]);});});
+  g.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{if(lm.has(m))return;lm.add(m);for(const k of TEX_SLOTS){const t=m[k];if(t&&t.isTexture&&!lt.has(t)&&t!==dispTex&&!KEEP.has(t)){t.dispose();lt.add(t);}}m.dispose();});});}
 function signTex(n){const c=mk(512,256),g=c.getContext('2d');g.fillStyle='#e8e2cf';g.fillRect(0,0,512,256);
   for(let x=-40;x<560;x+=40){g.fillStyle='#e0b21d';g.beginPath();g.moveTo(x,0);g.lineTo(x+20,0);g.lineTo(x+40,28);g.lineTo(x+20,28);g.fill();g.beginPath();g.moveTo(x,228);g.lineTo(x+20,228);g.lineTo(x+40,256);g.lineTo(x+20,256);g.fill();}
   g.fillStyle='#1a1a1a';g.fillRect(0,26,512,4);g.fillRect(0,226,512,4);
@@ -2551,7 +2556,7 @@ function buildGen(n){MATC.clear();
   G.update=function(dt){const px=camera.position.x,pz=camera.position.z,ccx=chunkOf(px),ccz=chunkOf(pz);let budget=G.first?14:1;G.first=false;
     for(let r=0;r<=RAD;r++)for(let i=-r;i<=r;i++)for(let j=-r;j<=r;j++){if(Math.max(Math.abs(i),Math.abs(j))!==r)continue;const k=ck(ccx+i,ccz+j);if(G.chunks.has(k))continue;if(budget--<=0)break;
       const c=G.genChunk(ccx+i,ccz+j);c.cx=ccx+i;c.cz=ccz+j;G.newCh=1;grp.add(c.g);G.chunks.set(k,c);obsV++;}
-    for(const [k,c] of G.chunks){if(c.cx==null){const q=k.split(',');c.cx=+q[0];c.cz=+q[1];}const a=c.cx,b=c.cz;if(Math.abs(a-ccx)>RAD+1||Math.abs(b-ccz)>RAD+1){obsV++;grp.remove(c.g);c.g.traverse(o=>{if(o.geometry)o.geometry.dispose();});
+    for(const [k,c] of G.chunks){if(c.cx==null){const q=k.split(',');c.cx=+q[0];c.cz=+q[1];}const a=c.cx,b=c.cz;if(Math.abs(a-ccx)>RAD+1||Math.abs(b-ccz)>RAD+1){obsV++;grp.remove(c.g);disposeChunkG(c.g,grp);
         for(const m of c.picks){const pi=G.picks.indexOf(m);if(pi>=0)G.picks.splice(pi,1);}if(NBIO[B]&&NBIO[B].maze){G.mazeEp=G.mazeEp||new Map();G.mazeEp.set(k,(G.mazeEp.get(k)||0)+1);}if(c.fe){const fi=G.fes.indexOf(c.fe);if(fi>=0)G.fes.splice(fi,1);G.inter=G.inter.filter(m=>!c.fe.inter.includes(m));}G.chunks.delete(k);}}
     if(G.newCh){G.newCh=0;G.matShared=(G.matShared||0)+dedupeMats(grp,[G]);}
     if(G.dome)G.dome.position.set(px,camera.position.y,pz);
@@ -2625,7 +2630,10 @@ function grinTex(){if(GRIN_TEX)return GRIN_TEX;const c=mk(256,96),g=c.getContext
   GRIN_TEX=new THREE.CanvasTexture(c);KEEP.add(GRIN_TEX);return GRIN_TEX;}
 /* pieles procedurales de criaturas: mapa de color + relieve (+ brillo propio) */
 const CRS={};
-function crSkin(kind,v){const key=kind+v;if(CRS[key])return CRS[key];const N=512,c=mk(N,N),b=mk(N,N),g=c.getContext('2d'),h=b.getContext('2d');
+let CRS_T=0;
+// se guardan solo las pieles usadas hace poco; las demás se borran al cambiar de piso para liberar memoria
+function crsTrim(max){const ks=Object.keys(CRS);if(ks.length<=max)return;ks.sort((a,b)=>(CRS[a].u||0)-(CRS[b].u||0));for(const k of ks.slice(0,ks.length-max)){const e=CRS[k];[e.map,e.bump,e.emi].forEach(t=>{if(t&&t.dispose)t.dispose();});delete CRS[k];}}
+function crSkin(kind,v){const key=kind+v;if(CRS[key]){CRS[key].u=++CRS_T;return CRS[key];}const N=512,c=mk(N,N),b=mk(N,N),g=c.getContext('2d'),h=b.getContext('2d');
   let s0=0;for(const ch of kind)s0=s0*31+ch.charCodeAt(0);const R=rng(hash3(s0,v,777));let e=null,eg=null,tint=true;
   const fill=(cx,col)=>{cx.fillStyle=col;cx.fillRect(0,0,N,N);};
   const T9=(x,y,r,f)=>{for(const dx of [0,-N,N])for(const dy of [0,-N,N]){const X=x+dx,Y=y+dy;if(X+r<0||X-r>N||Y+r<0||Y-r>N)continue;f(X,Y);}};
@@ -2679,7 +2687,7 @@ function crSkin(kind,v){const key=kind+v;if(CRS[key])return CRS[key];const N=512
   else{for(let i=0;i<60;i++)blob(g,R()*N,R()*N,30+R()*80,R()<0.5?'rgba(60,60,60,.12)':'rgba(255,255,255,.15)');pores(3000,0.2);}
   noise(g,N,N,8);noise(h,N,N,12);
   const mk2=cv=>{const t=new THREE.CanvasTexture(cv);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;KEEP.add(t);return t;};
-  CRS[key]={map:mk2(c),bump:mk2(b),emi:e?mk2(e):null,tint:tint};return CRS[key];}
+  CRS[key]={map:mk2(c),bump:mk2(b),emi:e?mk2(e):null,tint:tint,u:++CRS_T};return CRS[key];}
 /* pelo, cerdas, musgo o melena sobre una pieza (se queda pegado y se anima con ella) */
 const HAIR_MAT=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide});HAIR_MAT.userData.keep=true;
 function crHair(mesh,o){const g=mesh.geometry;if(!g||!g.attributes.position||!g.attributes.normal)return 0;const pos=g.attributes.position,nor=g.attributes.normal,idx=g.index?g.index.array:null,R=rng(o.seed);
@@ -3789,6 +3797,7 @@ function updateElevLights(){if(!ELB.length)return;const px=camera.position.x,pz=
 function buildRoom(n){
   if(room&&room.lvl1&&room.duck)S.duckSave={x:room.duck.x,y:room.duck.y,z:room.duck.z};
   if(room){scene.remove(room.group);disposeGroup(room.group);room=null;}
+  crsTrim(10);
   ELB.length=0;waterMats.length=0;camera.far=n===2?640:230;camera.updateProjectionMatrix();
   if(n===0){buildInfinite();addElevLights(room.group,false);renderMarks();return;}
   assignPool(0,0);
