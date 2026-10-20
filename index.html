@@ -3359,7 +3359,7 @@ function crPivot(C,dt){const pv=C.pivot;if(!pv)return;const sp=C.amb==='leap'?0:
   pv.rotation.order='ZXY';pv.rotation.x=-Math.sin(Math.PI*e)*Math.PI/2;pv.rotation.z=Math.PI*sstep(0.5,1,e);
   const y=ceil*e+(C.flyK||0)*fh+(C.leapY||0)-(C.burrow||0)*(C.H+0.3);pv.position.y=y/(C.k||1);
   if(C.wall&&e>0.2&&e<0.8){pv.position.z=-0.2/(C.k||1);}else pv.position.z=0;}
-function hookStartC(G,C){if(S.hook||S.state!=='play')return;S.hook={t:0,p:0.32,C:C,G:G,name:C.name||'Algo',scrT:0.3};Object.keys(keys).forEach(k=>keys[k]=false);joy.x=joy.y=0;
+function hookStartC(G,C){if(S.hook||S.state!=='play')return;delete HUDc.hkh;delete HUDc.hkf;delete HUDc.hkt;S.hook={t:0,p:0.32,C:C,G:G,name:C.name||'Algo',scrT:0.3};Object.keys(keys).forEach(k=>keys[k]=false);joy.x=joy.y=0;
   const H=$('#hook');H.hidden=false;$('#hookName').textContent=(C.name||'Algo')+' te tiene enganchado';$('#hookHint').textContent=isTouch?'¡TOCA LA PANTALLA MUY RÁPIDO!':'¡HAZ CLIC O PRESIONA ESPACIO MUY RÁPIDO!';
   hookBar();S.scareShake=1.4;noiseBurst(1.2,160,0.3);crVoice(C,0.32,0,true);tone(55,0,1.2,0.25,'sawtooth');S.san=Math.max(0,S.san-0.18);}
 function crHitMe(G){const C=G.cr;S.crHitCd=9;S.san=Math.max(0,S.san-0.35);S.scareShake=0.9;crVoice(C,0.35,0,true);noiseBurst(0.6,160,0.3);tone(55,0,0.6,0.25,'sine');toast('¡Te alcanzó!');if(MP.on&&!MP.host)mpEmit('ch',1);}
@@ -3574,7 +3574,7 @@ function l2Tick(G,dt){const B=G.beast,zP=G.zP;
   _l2m.lookAt(camera.position,B.root.position,_up);_l2q.setFromRotationMatrix(_l2m);
   B.root.quaternion.slerp(_l2q,Math.min(1,dt*1.6));
   // linterna: se enfada
-  let lit=false;if(S.state==='play'&&lampHeld()&&S.flashOn&&!S.grab){camera.updateMatrixWorld();const fw=_l2v.set(0,0,-1).applyQuaternion(camera.quaternion),to=B.root.position.clone().sub(camera.position),d=to.length();
+  let lit=false;if(S.state==='play'&&lampHeld()&&S.flashOn&&!S.grab){camera.updateMatrixWorld();const fw=_l2v.set(0,0,-1).applyQuaternion(camera.quaternion),to=_gD.copy(B.root.position).sub(camera.position),d=to.length();
     const ang=Math.acos(clamp(fw.dot(to.normalize()),-1,1));lit=ang<Math.atan(L2.BR*0.8/d)+0.12;}
   G.anger=clamp(G.anger+(lit?dt:-dt*0.35),0,1.8);const ang2=clamp(G.anger/0.9,0,1);
   if(lit&&!G.litSnd){G.litSnd=true;tone(70,0,1.2,0.2,'sawtooth');noiseBurst(1.2,120,0.18);}if(!lit&&G.anger<0.05)G.litSnd=false;
@@ -3592,13 +3592,16 @@ function l2Grab(G){S.grab={t:0};const B=G.beast;tone(48,0,3,0.35,'sawtooth');noi
   for(let i=0;i<28;i++){const hv=B.holes[i%B.holes.length].clone().multiplyScalar(1.02),segs=[];for(let k=0;k<14;k++){const m=new THREE.Mesh(new THREE.CylinderGeometry(0.62*TK*(1-k*0.06),0.62*TK*(1-(k+1)*0.06),1,12),tm);m.geometry.translate(0,0.5,0);G.group.add(m);segs.push(m);}
     B.tent.push({hv,segs,ph:Math.random()*6,off:new THREE.Vector3((Math.random()-0.5)*2.2,(Math.random()-0.5)*1.6,(Math.random()-0.5)*2.2),delay:Math.random()*0.5});}}
 const _tp=new THREE.Vector3(),_ta=new THREE.Vector3(),_tb=new THREE.Vector3(),_tc=new THREE.Vector3(),_up=new THREE.Vector3(0,1,0);
+const _gS=new THREE.Vector3(),_gM=new THREE.Vector3(),_gP=new THREE.Vector3(),_gQ=new THREE.Vector3(),_gD=new THREE.Vector3();
 function l2GrabTick(G,dt){const g=S.grab,B=G.beast;g.t+=dt;B.root.updateMatrixWorld();
   const eye=_tp.set(0,0.3,1.2).applyMatrix4(B.body.matrixWorld);
-  for(const T2 of B.tent){const k=clamp((g.t-T2.delay)/0.9,0,1);const st=T2.hv.clone().applyMatrix4(B.body.matrixWorld);
+  // optimización: se reutilizan los mismos vectores en vez de crear cientos de objetos nuevos en cada cuadro
+  const st=_gS,mid=_gM,prev=_gP,p=_gQ,d=_gD;
+  for(const T2 of B.tent){const k=clamp((g.t-T2.delay)/0.9,0,1);st.copy(T2.hv).applyMatrix4(B.body.matrixWorld);
     const tgt=_tb.set(camera.position.x,camera.position.y-0.6,camera.position.z).add(T2.off);const end=_tc.copy(st).lerp(tgt,k*(1-Math.max(0,g.t-1.4)*0));
-    const mid=st.clone().lerp(end,0.5).add(new THREE.Vector3(Math.sin(S.t*3+T2.ph)*10,Math.cos(S.t*2.5+T2.ph)*8,0));
-    let prev=st.clone();for(let s=0;s<T2.segs.length;s++){const t=(s+1)/T2.segs.length,a=1-t,p=new THREE.Vector3().addScaledVector(st,a*a).addScaledVector(mid,2*a*t).addScaledVector(end,t*t);
-      const seg=T2.segs[s],d=p.clone().sub(prev),len=d.length();seg.visible=k>0.02&&len>0.01;seg.position.copy(prev);seg.quaternion.setFromUnitVectors(_up,d.normalize());seg.scale.set(1+(1-k)*0.2,len,1);prev=p;}}
+    mid.copy(st).lerp(end,0.5);mid.x+=Math.sin(S.t*3+T2.ph)*10;mid.y+=Math.cos(S.t*2.5+T2.ph)*8;
+    prev.copy(st);for(let s=0;s<T2.segs.length;s++){const t=(s+1)/T2.segs.length,a=1-t;p.set(0,0,0).addScaledVector(st,a*a).addScaledVector(mid,2*a*t).addScaledVector(end,t*t);
+      const seg=T2.segs[s];d.copy(p).sub(prev);const len=d.length();seg.visible=k>0.02&&len>0.01;seg.position.copy(prev);seg.quaternion.setFromUnitVectors(_up,d.normalize());seg.scale.set(1+(1-k)*0.2,len,1);prev.copy(p);}}
   if(g.t>1.0){const f=Math.min(1,dt*(0.6+(g.t-1)*1.6));P.x+=(eye.x-P.x)*f;P.z+=(eye.z-P.z)*f;S.camY+=(eye.y-S.camY)*f;}
   camera.position.set(P.x,S.camY,P.z);_l2m.lookAt(camera.position,eye,_up);camera.quaternion.setFromRotationMatrix(_l2m);
   if(g.t>0.6&&!g.red){g.red=true;const f=$('#fade');f.style.transition='opacity 1.6s ease';f.style.background='#3a0000';f.style.opacity='0.6';}
@@ -3735,19 +3738,22 @@ function feRideTick(dt){const R=S.feRide;R.t+=dt;const f=$('#fade');
     S.doorOpen=0;S.doorTarget=0;S.elev='moving';S.moveT=0;S.moveDur=S.mdFix||3;S.feKey='';motorStart();}
   if(R.t>1.95&&!R.lit){R.lit=true;f.style.transition='opacity .9s ease';f.style.opacity='';S.feRide=null;}}
 /* criatura que te engancha */
-function hookStart(fe){if(S.hook||S.state!=='play')return;const C=fe.C;if(!C)return;C.root.visible=true;
+function hookStart(fe){if(S.hook||S.state!=='play')return;delete HUDc.hkh;delete HUDc.hkf;delete HUDc.hkt;const C=fe.C;if(!C)return;C.root.visible=true;
   S.hook={t:0,p:0.32,fe:fe,C:C,name:fe.spec.name,scrT:0.3};Object.keys(keys).forEach(k=>keys[k]=false);joy.x=joy.y=0;
   const H=$('#hook');H.hidden=false;$('#hookName').textContent=fe.spec.name+' te tiene enganchado';$('#hookHint').textContent=isTouch?'¡TOCA LA PANTALLA MUY RÁPIDO!':'¡HAZ CLIC O PRESIONA ESPACIO MUY RÁPIDO!';
   hookBar();S.scareShake=1.2;noiseBurst(1.2,160,0.3);crVoice(C,0.3,0,true);tone(55,0,1.2,0.25,'sawtooth');S.san=Math.max(0,S.san-0.15);}
-function hookBar(){const h=S.hook;if(!h)return;if(h.helpT>0){$('#hookHint').textContent='¡'+(h.help||'Alguien')+' te está ayudando!';}else $('#hookHint').textContent=isTouch?'¡TOCA LA PANTALLA MUY RÁPIDO!':'¡HAZ CLIC O PRESIONA ESPACIO MUY RÁPIDO!';$('#hookFill').style.width=(clamp(h.p,0,1)*100).toFixed(1)+'%';$('#hookTime').style.width=(clamp(1-h.t/7.5,0,1)*100).toFixed(1)+'%';}
+const HKE={};const hkEl=id=>HKE[id]||(HKE[id]=$('#'+id));
+function hookBar(){const h=S.hook;if(!h)return;const hint=h.helpT>0?'¡'+(h.help||'Alguien')+' te está ayudando!':isTouch?'¡TOCA LA PANTALLA MUY RÁPIDO!':'¡HAZ CLIC O PRESIONA ESPACIO MUY RÁPIDO!';
+  hudSet(hkEl('hookHint'),'hkh',hint,(e,v)=>{e.textContent=v;});hudSet(hkEl('hookFill'),'hkf',(clamp(h.p,0,1)*100).toFixed(1)+'%',_w);hudSet(hkEl('hookTime'),'hkt',(clamp(1-h.t/7.5,0,1)*100).toFixed(1)+'%',_w);}
 function hookTap(){const h=S.hook;if(!h||S.state!=='play')return;h.p+=0.065;S.scareShake=Math.max(S.scareShake,0.35);const r=$('#hookTap');r.classList.remove('hit');void r.offsetWidth;r.classList.add('hit');
   noiseBurst(0.06,500+Math.random()*400,0.05);if(h.p>=1)hookWin();else hookBar();}
+const _hkT=new THREE.Vector3(),_hkH=new THREE.Vector3();
 function hookTick(dt){const h=S.hook,C=h.C,fe=h.fe;h.t+=dt;if(h.helpT>0)h.helpT-=dt;h.p-=dt*(0.17+h.t*0.012);hookBar();let head;
   if(fe){animCreature(C,dt,0.9);fe.g.updateMatrixWorld();
   // te jala hacia el fondo del elevador
-  const tgt=fe.g.localToWorld(new THREE.Vector3(0,0,-0.2));const k=Math.min(1,dt*0.35);P.x+=(tgt.x-P.x)*k;P.z+=(tgt.z-P.z)*k;
-  head=fe.g.localToWorld(new THREE.Vector3(0,Math.max(0.6,C.eyeY||C.H*0.85),-0.95));}
-  else{C.root.updateMatrixWorld(true);head=new THREE.Vector3();if(C.head)C.head.getWorldPosition(head);else head.copy(C.root.position).setY(C.y+(C.eyeY||C.H*0.8));if(head.y<P.y+0.4)head.y=P.y+0.4;const k=Math.min(1,dt*0.3),dd=Math.hypot(C.x-P.x,C.z-P.z);if(dd>0.9){P.x+=(C.x-P.x)*k*0.5;P.z+=(C.z-P.z)*k*0.5;}}
+  const tgt=fe.g.localToWorld(_hkT.set(0,0,-0.2));const k=Math.min(1,dt*0.35);P.x+=(tgt.x-P.x)*k;P.z+=(tgt.z-P.z)*k;
+  head=fe.g.localToWorld(_hkH.set(0,Math.max(0.6,C.eyeY||C.H*0.85),-0.95));}
+  else{C.root.updateMatrixWorld(true);head=_hkH.set(0,0,0);if(C.head)C.head.getWorldPosition(head);else head.copy(C.root.position).setY(C.y+(C.eyeY||C.H*0.8));if(head.y<P.y+0.4)head.y=P.y+0.4;const k=Math.min(1,dt*0.3),dd=Math.hypot(C.x-P.x,C.z-P.z);if(dd>0.9){P.x+=(C.x-P.x)*k*0.5;P.z+=(C.z-P.z)*k*0.5;}}
   const sh=shake();
   camera.position.set(P.x+sh.x,S.camY+sh.y,P.z);_l2m.lookAt(camera.position,head,_up);camera.quaternion.setFromRotationMatrix(_l2m);
   P.yaw=Math.atan2(P.x-head.x,P.z-head.z);
