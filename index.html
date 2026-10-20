@@ -1922,8 +1922,10 @@ function nbTex(k){if(NBT[k])return NBT[k];const S2=256,c=mk(S2,S2),g=c.getContex
   else fill('#888');
   noise(g,S2,S2,10);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;KEEP.add(t);NBT[k]=t;return t;}
 /* ayudantes para armar los chunks */
+/* franjas de paso garantizadas (cada 48 m) para que ningún mapa con paredes te encierre */
+const corrHit=(x1,x2,z1,z2)=>{const P2=48,W2=1.5;for(let k=Math.floor((x1-24-W2)/P2);k<=Math.floor((x2-24+W2)/P2);k++){const c=k*P2+24;if(x2>c-W2&&x1<c+W2)return true;}for(let k=Math.floor((z1-24-W2)/P2);k<=Math.floor((z2-24+W2)/P2);k++){const c=k*P2+24;if(z2>c-W2&&z1<c+W2)return true;}return false;};
 const NBH={
-  box(X,k,x1,x2,y1,y2,z1,z2,ob){X.put(k,boxM(x1,x2,y1,y2,z1,z2));if(ob)X.c.obs.push(Object.assign({x1,x2,z1,z2,tall:y2>1.6},y2<1.6?{y2:y2}:{}));},
+  box(X,k,x1,x2,y1,y2,z1,z2,ob){if(ob&&y2>1&&corrHit(x1,x2,z1,z2))return;X.put(k,boxM(x1,x2,y1,y2,z1,z2));if(ob)X.c.obs.push(Object.assign({x1,x2,z1,z2,tall:y2>1.6},y2<1.6?{y2:y2}:{}));},
   cells(X,CE,fn){for(let i=Math.floor(X.x0/CE);i*CE<X.x0+X.CH;i++)for(let j=Math.floor(X.z0/CE);j*CE<X.z0+X.CH;j++){const cx=i*CE+CE/2,cz=j*CE+CE/2;if(cx<X.x0||cx>=X.x0+X.CH||cz<X.z0||cz>=X.z0+X.CH)continue;fn(cx,cz,i,j,hash3(i,j,X.sd+CE*7));}},
   ok(X,x,z,pad){return !X.clearAt(x,z,pad||0)&&X.inside(x,z);},
   // paredes de cuadrícula con puertas
@@ -1957,7 +1959,7 @@ const NBIO={
     for(let a=0;a<4;a++)for(let b=0;b<3;b++){if(((h>>>(a*3+b))&7)===0)continue;const x=cx-3+a*2,z=cz-1.5+b*2;if(!NBH.ok(X,x,z,0.5))continue;NBH.box(X,'wood',x-0.4,x+0.4,0.7,0.75,z-0.3,z+0.3,false);NBH.box(X,'metal',x-0.38,x-0.34,0,0.7,z-0.28,z+0.28,false);NBH.box(X,'metal',x+0.34,x+0.38,0,0.7,z-0.28,z+0.28,false);X.c.obs.push({x1:x-0.42,x2:x+0.42,z1:z-0.32,z2:z+0.32,y2:0.8});
       NBH.box(X,'wood',x-0.2,x+0.2,0.42,0.46,z+0.45,z+0.85,false);NBH.box(X,'wood',x-0.2,x+0.2,0.46,0.9,z+0.83,z+0.87,false);}
     // casilleros en el pasillo
-    if((h>>>20)&1){const z=cz+CE/2-0.45;if(NBH.ok(X,cx,z,1))NBH.box(X,'locker',cx-3,cx+3,0,1.9,z-0.25,z+0.25,true);}});},
+    if((h>>>20)&1){const z=cz+3.4;if(NBH.ok(X,cx,z,1))NBH.box(X,'locker',cx-3,cx+3,0,1.9,z-0.25,z+0.25,true);}});},
   amb(G){G.evT=10+Math.random()*16;const p=(Math.random()-0.5)*1.8;if(Math.random()<0.4){for(let k=0;k<14;k++)ptone(880,k*0.07,0.05,0.025,'square',p);}else pnoise(0.25,700,0.1,p,3);}},
  casa:{out:false,ceil:2.7,names:['La casa infinita','Hogar, dulce hogar','La sala de siempre','Ya llegué'],
   env(G){scene.fog=new THREE.Fog(0x16120c,3,24);scene.background=new THREE.Color(0x0c0906);amb.color.setHex(0xffe0b0);amb.intensity=0.18;G.hum=0.01;G.group.add(new THREE.HemisphereLight(0xffd8a0,0x1a1008,0.18));},
@@ -1966,10 +1968,10 @@ const NBIO={
   chunk(X,flip){const HH=X.ICEIL,CE=6;NBH.walls(X,CE,'wall',HH,1,0.15);
    NBH.cells(X,CE,(cx,cz,i,j,h)=>{if(X.elevD(cx,cz)>5){const b=new THREE.Mesh(new THREE.SphereGeometry(0.09,8,6),X.M.bulb);b.position.set(cx,flip?0.35:HH-0.35,cz);X.c.g.add(b);NBH.box(X,'dark',cx-0.005,cx+0.005,flip?0:HH-0.3,flip?0.3:HH,cz-0.005,cz+0.005);if((h&7)===0)X.G.flick.push({m:b,t:X.r()*4});}
     if(!NBH.ok(X,cx,cz,2.2))return;const room=h%4,yaw=((h>>>4)&3)*Math.PI/2;
-    if(room===0){NBH.furn(X,'sofa',cx,cz+1.5,Math.PI,flip,HH);NBH.furn(X,'tv',cx,cz-1.9,0,flip,HH);NBH.furn(X,'lampara',cx+2,cz+2,0,flip,HH);}
-    else if(room===1){NBH.furn(X,'barra',cx,cz-2.2,0,flip,HH);NBH.furn(X,'refri',cx+2.2,cz-2.1,0,flip,HH);NBH.furn(X,'mesa',cx,cz+0.6,yaw,flip,HH);}
-    else if(room===2){NBH.furn(X,'cama',cx-1,cz,yaw,flip,HH);NBH.furn(X,'comoda',cx+2.1,cz+1.8,Math.PI,flip,HH);}
-    else{NBH.furn(X,'mesa',cx,cz,yaw,flip,HH);NBH.furn(X,'lampara',cx-2,cz-2,0,flip,HH);}
+    if(room===0){NBH.furn(X,'sofa',cx,cz+1.2,Math.PI,flip,HH);NBH.furn(X,'tv',cx,cz-1.4,0,flip,HH);NBH.furn(X,'lampara',cx+1.5,cz+1.5,0,flip,HH);}
+    else if(room===1){NBH.furn(X,'barra',cx-0.3,cz-1.6,0,flip,HH);NBH.furn(X,'refri',cx+1.6,cz-1.6,0,flip,HH);NBH.furn(X,'mesa',cx,cz+0.8,yaw,flip,HH);}
+    else if(room===2){NBH.furn(X,'cama',cx-0.6,cz,yaw,flip,HH);NBH.furn(X,'comoda',cx+1.6,cz+1.4,Math.PI,flip,HH);}
+    else{NBH.furn(X,'mesa',cx,cz,yaw,flip,HH);NBH.furn(X,'lampara',cx-1.5,cz-1.5,0,flip,HH);}
     // fotos con caras borradas
     if((h>>>8)&1){const ph=new THREE.Mesh(new THREE.PlaneGeometry(0.5,0.5),X.M.photo);ph.position.set(cx,1.6,cz-CE/2+0.09);X.c.g.add(ph);}
     if(flip&&((h>>>9)&1)){const d=new THREE.Mesh(new THREE.PlaneGeometry(0.9,2),X.M.door);d.rotation.x=-Math.PI/2;d.position.set(cx+1.3,0.012,cz+1.3);d.rotation.z=yaw;X.c.g.add(d);}});},
@@ -1992,7 +1994,7 @@ const NBIO={
  maquinas:{out:false,ceil:3.4,names:['Cuarto de máquinas','Calderas','Tuberías','El sótano que hierve'],
   env(G){scene.fog=new THREE.Fog(0x1a0e08,2,22);scene.background=new THREE.Color(0x0e0604);amb.color.setHex(0xffa070);amb.intensity=0.16;G.hum=0.09;G.group.add(new THREE.HemisphereLight(0xff9a60,0x100604,0.22));},
   mats(M){M.floor=lam(nbTex('metalp'),0x6a6a6a);M.ceil=lam(nbTex('metalp'),0x5a5a5a);M.wall=lam(nbTex('metalp'),0x7a6a5a);M.pipe=lam(nbTex('pipe'));M.boil=lam(nbTex('pipe'),0x8a5a3a);M.red=new THREE.MeshBasicMaterial({color:0xff4a1a});M.panel=M.red;M.dead=lam(null,0x2a1a10);},
-  chunk(X){const HH=X.ICEIL;NBH.walls(X,4,'wall',HH,0,0.25);
+  chunk(X){const HH=X.ICEIL;NBH.walls(X,4,'wall',HH,1,0.25);
    NBH.cells(X,4,(cx,cz,i,j,h)=>{if(X.elevD(cx,cz)<7||!X.inside(cx,cz))return;if((h&3)===0){const m=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.12,0.2),X.M.red);m.position.set(cx-1.7,HH-0.3,cz-1.7);X.c.g.add(m);X.G.flick.push({m:m,t:X.r()*2});}
     if((h>>>3&1))X.put('pipe',ngeo(new THREE.CylinderGeometry(0.12,0.12,4,8).rotateZ(Math.PI/2).translate(cx,HH-0.35-((h>>>4)&1)*0.3,cz-1.6)));
     if((h>>>5&1))X.put('pipe',ngeo(new THREE.CylinderGeometry(0.08,0.08,4,8).rotateX(Math.PI/2).translate(cx-1.6,HH-0.6,cz)));
@@ -2026,7 +2028,7 @@ const NBIO={
   env(G){scene.fog=new THREE.Fog(0x141a1a,3,26);scene.background=new THREE.Color(0x0a0e0e);amb.color.setHex(0xe8fff8);amb.intensity=0.22;G.hum=0.06;G.group.add(new THREE.HemisphereLight(0xe0fff4,0x101414,0.24));},
   mats(M){M.floor=lam(nbTex('tile2'),0xc8d0d0);M.ceil=lam(nbTex('tile2'),0xb8c0c0);M.wall=lam(nbTex('tile2'));M.washer=lam(nbTex('washer'));M.white=lam(null,0xe8e8e2);M.mirror=new THREE.MeshPhongMaterial({color:0x1a2228,shininess:200,specular:0xbbccdd});M.sink=lam(null,0xf0f0ec);M.metal=lam(null,0x8a9090);M.panel=new THREE.MeshBasicMaterial({color:0xf0fffa});M.dead=lam(null,0x2a3030);},
   chunk(X){const HH=X.ICEIL;NBH.walls(X,8,'wall',HH,1,0.15);
-   NBH.cells(X,8,(cx,cz,i,j,h)=>{NBH.panel(X,cx,HH,cz,0.6,1.2,(h&7)!==0,(h&7)===1);if(!NBH.ok(X,cx,cz,3))return;const z=cz-3.5;
+   NBH.cells(X,8,(cx,cz,i,j,h)=>{NBH.panel(X,cx,HH,cz,0.6,1.2,(h&7)!==0,(h&7)===1);if(!NBH.ok(X,cx,cz,3))return;const z=cz-1.4;
     if(h&1){for(let k=0;k<5;k++){const x=cx-2.8+k*1.4;NBH.box(X,'white',x-0.6,x+0.6,0,1.0,z-0.3,z+0.4,false);const d=new THREE.Mesh(new THREE.PlaneGeometry(1.1,1.0),X.M.washer);d.position.set(x,0.5,z+0.41);X.c.g.add(d);if((h>>>k)&1)(X.c.spin=X.c.spin||[]).push(d);}X.c.obs.push({x1:cx-3.6,x2:cx+3.6,z1:z-0.32,z2:z+0.42,y2:1.0});}
     else{for(let k=0;k<4;k++){const x=cx-2.4+k*1.6;NBH.box(X,'sink',x-0.4,x+0.4,0.75,0.9,z-0.2,z+0.25,false);NBH.box(X,'metal',x-0.03,x+0.03,0.9,1.05,z-0.15,z-0.1,false);NBH.box(X,'mirror',x-0.45,x+0.45,1.2,2.1,z-0.32,z-0.3,false);}X.c.obs.push({x1:cx-3.2,x2:cx+3.2,z1:z-0.32,z2:z+0.27,y2:0.95});}});},
   amb(G){G.evT=4+Math.random()*7;const p=(Math.random()-0.5)*1.8;if(Math.random()<0.5)drip();else pnoise(2.2,120,0.05,p,1);}},
@@ -2353,9 +2355,9 @@ function buildGen(n){
       if(r()<0.22){const x=x0+4+r()*(CH-8),z=z0+4+r()*(CH-8),a=r()*3;if(!clearAt(x,z,3)&&inside(x,z)&&H(x,z)<SEA-1){const pl=new THREE.Mesh(new THREE.BoxGeometry(3,0.3,3),M.wood);pl.position.set(x,SEA+0.05,z);pl.rotation.y=a;pl.userData.bob=r()*6;c.g.add(pl);(c.bobs=c.bobs||[]).push(pl);
           if(r()<0.6){const dr=new THREE.Mesh(new THREE.BoxGeometry(0.96,2.2,0.08),M.wood);dr.position.set(0,1.25,0);pl.add(dr);}}}}
     else if(B==='pegajoso'){const CE=6,HH=ICEIL;for(let i=0;i<4;i++)for(let j=0;j<4;j++){const gi=cx*4+i,gj=cz*4+j,h=hash3(gi,gj,sd),wx=(gi+1)*CE,wz=(gj+1)*CE;
-        const edge=(ax,az,bx,bz,hv)=>{const len=Math.hypot(bx-ax,bz-az),door=(hv>>>3)%3!==0,dpos=0.8+((hv>>>5)%100)/100*(len-2.4);const segs=door?[[0,dpos],[dpos+1.5,len]]:[[0,len]];
+        const edge=(ax,az,bx,bz,hv)=>{const len=Math.hypot(bx-ax,bz-az),door=true,dpos=0.8+((hv>>>5)%100)/100*(len-2.4);const segs=door?[[0,dpos],[dpos+1.5,len]]:[[0,len]];
           for(const [a,b] of segs){if(b-a<0.05)continue;const sx=ax+(bx-ax)*a/len,sz=az+(bz-az)*a/len,ex=ax+(bx-ax)*b/len,ez=az+(bz-az)*b/len,mx=(sx+ex)/2,mz=(sz+ez)/2;
-            if(elevD(mx,mz)<8.5||Math.hypot(mx-F.x,mz-F.z)<2.5||!inside(mx,mz))continue;const w=Math.abs(ex-sx)+0.2,d=Math.abs(ez-sz)+0.2;put('wall',boxGeo(w,HH,d,mx,HH/2,mz));c.obs.push({x1:mx-w/2,x2:mx+w/2,z1:mz-d/2,z2:mz+d/2,tall:true});}};
+            if(elevD(mx,mz)<8.5||Math.hypot(mx-F.x,mz-F.z)<2.5||!inside(mx,mz))continue;const w=Math.abs(ex-sx)+0.2,d=Math.abs(ez-sz)+0.2;if(corrHit(mx-w/2,mx+w/2,mz-d/2,mz+d/2))continue;put('wall',boxGeo(w,HH,d,mx,HH/2,mz));c.obs.push({x1:mx-w/2,x2:mx+w/2,z1:mz-d/2,z2:mz+d/2,tall:true});}};
         if((h&7)<3)edge(wx,gj*CE,wx,wz,hash3(gi,gj,sd+1));if(((h>>>8)&7)<3)edge(gi*CE,wz,wx,wz,hash3(gi,gj,sd+2));
         if(((h>>>12)&3)===0&&elevD(gi*CE+3,gj*CE+3)>6){const px=gi*CE+3,pz=gj*CE+3,pn=new THREE.Mesh(new THREE.PlaneGeometry(0.62,1.22),M.panel);pn.rotation.x=Math.PI/2;pn.position.set(px,HH-0.01,pz);c.g.add(pn);if(((h>>>16)&3)===0)G.flick.push({m:pn,t:r()*5});}}
       for(let i=0;i<CH;i+=1)for(let j=0;j<CH;j+=1){const x=x0+i+0.5,z=z0+j+0.5;if(!gooAt(x,z))continue;put('goo',ngeo(new THREE.PlaneGeometry(1.02,1.02).rotateX(-Math.PI/2).translate(x,0.012,z)));}
@@ -2384,12 +2386,13 @@ function buildGen(n){
         if(elevD(cx2,cz2)>6&&inside(cx2,cz2)){const pn=new THREE.Mesh(new THREE.PlaneGeometry(0.62,1.22),((h>>>12)&7)===0?M.dead:M.panel);pn.rotation.x=Math.PI/2;pn.position.set(cx2,ICEIL-0.01,cz2);c.g.add(pn);if(((h>>>9)&7)===0)G.flick.push({m:pn,t:r()*5});}
         if(clearAt(cx2,cz2,1.5)||!inside(cx2,cz2))continue;
         if(kind<6){const ph=1.5,t=0.08,side=(h>>>4)&1?1:-1,bz=cz2-CE/2+0.2,sx=cx2+side*(CE/2-0.2);
-          put('part',boxGeo(CE-0.4,ph,t,cx2,ph/2,bz));c.obs.push({x1:cx2-CE/2+0.2,x2:cx2+CE/2-0.2,z1:bz-0.06,z2:bz+0.06});
-          put('part',boxGeo(t,ph,CE-0.4,sx,ph/2,cz2));c.obs.push({x1:sx-0.06,x2:sx+0.06,z1:cz2-CE/2+0.2,z2:cz2+CE/2-0.2});
+          const PL=2.7,bx1=side>0?sx-PL:sx,bx2=side>0?sx:sx+PL,sz1=bz,sz2=bz+PL;
+          if(!corrHit(bx1,bx2,bz-0.06,bz+0.06)){put('part',boxGeo(PL,ph,t,(bx1+bx2)/2,ph/2,bz));c.obs.push({x1:bx1,x2:bx2,z1:bz-0.06,z2:bz+0.06});}
+          if(!corrHit(sx-0.06,sx+0.06,sz1,sz2)){put('part',boxGeo(t,ph,PL,sx,ph/2,(sz1+sz2)/2));c.obs.push({x1:sx-0.06,x2:sx+0.06,z1:sz1,z2:sz2});}
           const dz=bz+0.5;put('desk',boxGeo(1.8,0.06,0.8,cx2,0.74,dz));put('desk',boxGeo(0.06,0.72,0.7,cx2-0.85,0.36,dz));put('desk',boxGeo(0.06,0.72,0.7,cx2+0.85,0.36,dz));c.obs.push({x1:cx2-0.92,x2:cx2+0.92,z1:dz-0.42,z2:dz+0.42,y2:0.8});
           put('mon',boxGeo(0.56,0.36,0.05,cx2,1.0,dz-0.15));put('mon',boxGeo(0.06,0.2,0.06,cx2,0.86,dz-0.18));const on=((h>>>6)&3)===0,sc=new THREE.Mesh(new THREE.PlaneGeometry(0.5,0.3),on?M.scr:M.scrOff);sc.position.set(cx2,1.0,dz-0.12);c.g.add(sc);if(on&&((h>>>8)&1))G.flick.push({m:sc,t:r()*5});
           const chx=cx2+(r()-0.5)*0.8,chz=dz+0.9+r()*0.4;put('chair',boxGeo(0.5,0.08,0.5,chx,0.48,chz));put('chair',boxGeo(0.5,0.55,0.06,chx,0.8,chz+0.25));put('chair',ngeo(new THREE.CylinderGeometry(0.03,0.03,0.44,6).translate(chx,0.22,chz)));c.obs.push({c:1,x:chx,z:chz,r:0.3,y2:1});}
-        else if(kind===6){put('wall',boxGeo(CE,ICEIL,0.15,cx2,ICEIL/2,cz2-CE/2));c.obs.push({x1:cx2-CE/2,x2:cx2+CE/2,z1:cz2-CE/2-0.08,z2:cz2-CE/2+0.08,tall:true});}
+        else if(kind===6){const w6=CE-1.8,x6=cx2+(((h>>>5)&1)?0.9:-0.9);if(!corrHit(x6-w6/2,x6+w6/2,cz2-CE/2-0.08,cz2-CE/2+0.08)){put('wall',boxGeo(w6,ICEIL,0.15,x6,ICEIL/2,cz2-CE/2));c.obs.push({x1:x6-w6/2,x2:x6+w6/2,z1:cz2-CE/2-0.08,z2:cz2-CE/2+0.08,tall:true});}}
         else if(kind===7){for(let k=0;k<1+((h>>>5)&3);k++){const fx=cx2-1+k*0.55;put('cab',boxGeo(0.5,1.3,0.6,fx,0.65,cz2-CE/2+0.4));}c.obs.push({x1:cx2-1.3,x2:cx2+1.3,z1:cz2-CE/2+0.1,z2:cz2-CE/2+0.7,y2:1.35});}}}
     else if(B==='ciudad'){for(let bi=Math.floor(x0/BS)-1;bi<=Math.floor((x0+CH)/BS);bi++)for(let bj=Math.floor(z0/BS)-1;bj<=Math.floor((z0+CH)/BS);bj++){const bx1=bi*BS+SW/2,bx2=(bi+1)*BS-SW/2,bz1=bj*BS+SW/2,bz2=(bj+1)*BS-SW/2,mx=(bx1+bx2)/2,mz=(bz1+bz2)/2;
         if(mx<x0||mx>=x0+CH||mz<z0||mz>=z0+CH)continue;if(half&&(Math.abs(mx)>half+10||Math.abs(mz)>half+10))continue;
@@ -2431,7 +2434,7 @@ function buildGen(n){
           for(let z=za+1.6;z<zb-1;z+=3.6)put('door',ngeo(new THREE.PlaneGeometry(1.0,2.15).rotateY(sg>0?-Math.PI/2:Math.PI/2).translate(xw-sg*0.012,1.075,z)));});}}
     else if(B==='hospital'){const CE=7,HH=ICEIL;for(let i=0;i<4;i++)for(let j=0;j<4;j++){const gi=Math.floor(x0/CE)+i,gj=Math.floor(z0/CE)+j,h=hash3(gi,gj,sd),wx=(gi+1)*CE,wz=(gj+1)*CE,ccx=gi*CE+CE/2,ccz=gj*CE+CE/2;if(ccx<x0||ccx>=x0+CH||ccz<z0||ccz>=z0+CH)continue;
         const edge=(ax,az,bx,bz,hv)=>{const len=Math.hypot(bx-ax,bz-az),dpos=1+((hv>>>5)%100)/100*(len-3.6);for(const [a,b] of [[0,dpos],[dpos+1.8,len]]){if(b-a<0.05)continue;const sx=ax+(bx-ax)*a/len,sz=az+(bz-az)*a/len,ex=ax+(bx-ax)*b/len,ez=az+(bz-az)*b/len,mx=(sx+ex)/2,mz=(sz+ez)/2;
-            if(elevD(mx,mz)<9||Math.hypot(mx-F.x,mz-F.z)<3||!inside(mx,mz))continue;const w=Math.abs(ex-sx)+0.2,d=Math.abs(ez-sz)+0.2;put('wall',boxGeo(w,HH,d,mx,HH/2,mz));c.obs.push({x1:mx-w/2,x2:mx+w/2,z1:mz-d/2,z2:mz+d/2,tall:true});}};
+            if(elevD(mx,mz)<9||Math.hypot(mx-F.x,mz-F.z)<3||!inside(mx,mz))continue;const w=Math.abs(ex-sx)+0.2,d=Math.abs(ez-sz)+0.2;if(corrHit(mx-w/2,mx+w/2,mz-d/2,mz+d/2))continue;put('wall',boxGeo(w,HH,d,mx,HH/2,mz));c.obs.push({x1:mx-w/2,x2:mx+w/2,z1:mz-d/2,z2:mz+d/2,tall:true});}};
         if((h&7)<5)edge(wx,gj*CE,wx,wz,hash3(gi,gj,sd+1));if(((h>>>8)&7)<5)edge(gi*CE,wz,wx,wz,hash3(gi,gj,sd+2));
         if(elevD(ccx,ccz)>6&&inside(ccx,ccz)){const pn=new THREE.Mesh(new THREE.PlaneGeometry(0.62,1.22),((h>>>12)&7)<2?M.dead:M.panel);pn.rotation.x=Math.PI/2;pn.position.set(ccx,HH-0.01,ccz);c.g.add(pn);if(((h>>>15)&7)===0)G.flick.push({m:pn,t:r()*5});}
         if(((h>>>18)&3)===0&&elevD(ccx,ccz)>7){const em=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.12,0.2),M.red);em.position.set(gi*CE+0.4,HH-0.3,gj*CE+0.4);c.g.add(em);G.flick.push({m:em,t:r()*2});}
