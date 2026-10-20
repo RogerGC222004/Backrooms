@@ -2657,8 +2657,9 @@ function genTargets(){const t=[];if(S.state==='play')t.push({x:P.x,y:P.y,z:P.z,m
 function crSeen(G){const C=G.cr;if(!C||!C.root.visible)return false;const d=Math.hypot(C.x-P.x,C.z-P.z);if(d>(scene.fog?scene.fog.far+6:60))return false;
   camera.updateMatrixWorld();_pm.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);_fr.setFromProjectionMatrix(_pm);_sph.center.set(C.x,C.y+C.H*0.55,C.z);_sph.radius=C.H*0.5;if(!_fr.intersectsSphere(_sph))return false;
   return G.los(camera.position.x,camera.position.z,C.x,C.z);}
-function crRelocate(G,TG){const C=G.cr,r=Math.random;for(let t=0;t<30;t++){const a=r()*6.283,d=34+r()*14,x=P.x+Math.sin(a)*d,z=P.z+Math.cos(a)*d;if(G.spec.half&&(Math.abs(x)>G.spec.half-4||Math.abs(z)>G.spec.half-4))continue;
-    if(G.blocked(x,z,C.rad))continue;if(TG.some(p=>Math.hypot(p.x-x,p.z-z)<26))continue;C.x=x;C.z=z;C.y=crGroundY(G,x,z);return true;}return false;}
+function crRelocate(G,TG,dMin,dMax,clr,hide){const C=G.cr,r=Math.random;dMin=dMin||34;dMax=dMax||48;clr=clr||26;for(let t=0;t<40;t++){const a=r()*6.283,d=dMin+r()*(dMax-dMin),x=P.x+Math.sin(a)*d,z=P.z+Math.cos(a)*d;if(G.spec.half&&(Math.abs(x)>G.spec.half-4||Math.abs(z)>G.spec.half-4))continue;
+    if(hide){let da=a-Math.atan2(-Math.sin(P.yaw),-Math.cos(P.yaw));da=Math.atan2(Math.sin(da),Math.cos(da));if(Math.abs(da)<1.4&&t<34)continue;}
+    if(G.blocked(x,z,C.rad))continue;if(TG.some(p=>Math.hypot(p.x-x,p.z-z)<clr))continue;C.x=x;C.z=z;C.y=crGroundY(G,x,z);return true;}return false;}
 function crStep(G,C,tx,tz,spd,dt){const dx=tx-C.x,dz=tz-C.z,d=Math.hypot(dx,dz);if(d<0.05){C.spd=0;return d;}const want=Math.atan2(dx,dz);let moved=false;
   for(const off of [0,0.6,-0.6,1.2,-1.2,2,-2]){const a=want+off,st=Math.min(d,spd*dt),nx=C.x+Math.sin(a)*st,nz=C.z+Math.cos(a)*st;if(!G.blocked(nx,nz,Math.min(C.rad*0.6,0.9),false)){C.x=nx;C.z=nz;moved=true;
       let dy=a-C.yaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));C.yaw+=dy*Math.min(1,dt*6);break;}}
@@ -2670,6 +2671,10 @@ function updateCreature(G,dt){const C=G.cr;if(!C)return;const host=!MP.on||MP.ho
   if(host){const TG=genTargets();C.stT-=dt;C.hitCd=Math.max(0,C.hitCd-dt);
     let NT=null,nd=1e9;for(const t of TG){const d=Math.hypot(t.x-C.x,t.z-C.z);if(d<nd){nd=d;NT=t;}}
     const anySeen=TG.some(t=>t.sd===1);
+    // en mapas infinitos la criatura no se queda atrás: si te alejas mucho, reaparece a 20-25 m de ti, fuera de tu vista
+    if(G.spec.inf&&NT&&nd>70&&!anySeen){C.farT=(C.farT||0)+dt;if(C.farT>6){C.farT=0;if(crRelocate(G,TG,20,25,18,true)){C.st='idle';C.stT=2;C.tx=C.x;C.tz=C.z;C.root.position.set(C.x,C.y,C.z);}}}else C.farT=0;
+    // en mapas infinitos la criatura no se queda atrás: si te alejas mucho, reaparece cerca (fuera de tu vista)
+    if(G.spec.inf&&NT&&nd>70&&!anySeen){C.farT=(C.farT||0)+dt;if(C.farT>6){C.farT=0;if(crRelocate(G,TG)){C.st='idle';C.stT=2;C.tx=C.x;C.tz=C.z;C.root.position.set(C.x,C.y,C.z);}}}else C.farT=0;
     if(!NT){C.spd=0;}
     else if(C.st==='retreat'){const ax=C.x-NT.x,az=C.z-NT.z,l=Math.hypot(ax,az)||1;crStep(G,C,C.x+ax/l*5,C.z+az/l*5,C.run*0.9,dt);if(C.stT<=0||nd>30){if(!anySeen&&crRelocate(G,TG)){}C.st='idle';C.stT=4;}}
     else{const b=C.beh;
