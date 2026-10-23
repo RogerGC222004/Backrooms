@@ -760,7 +760,17 @@ function chestMove(){const pk=INV.pick;if(!pk)return;const id=INV[pk.w][pk.i];if
   else{const j=INV.chest.indexOf(null);if(j<0){toast('El baúl está lleno');return;}if(pk.w==='hot'&&pk.i===INV.sel&&LAMPS[id])S.flashOn=false;INV.chest[j]=id;INV[pk.w][pk.i]=null;}
   INV.pick=null;tone(520,0,.06,.06,'triangle');renderInvPanel();renderHotbar();}
 const held=()=>INV.hot[INV.sel];
-const LAMPS={linterna:{bat:'flashBat',n:1,k:1,dist:26,ang:0.42,x:0.2,name:'La linterna'},linternaG:{bat:'flashBat2',n:2,k:1.9,dist:46,ang:0.62,x:0.2,name:'La linterna grande'},reflector:{bat:'flashBat3',n:3,k:2.8,dist:62,ang:0.78,x:0,name:'El reflector'}};
+const LAMPS={linterna:{bat:'flashBat',n:1,k:1,dist:26,ang:0.42,x:0.2,name:'La linterna'},linternaG:{bat:'flashBat2',n:2,k:1.9,dist:46,ang:0.62,x:0.2,name:'La linterna grande',glow:10},reflector:{bat:'flashBat3',n:3,k:2.8,dist:62,ang:0.78,x:0,name:'El reflector',glow:30}};
+// contorno brillante: los objetos que alumbras con la linterna grande (10 s) o el reflector (30 s) siguen marcados aunque apagues o voltees
+const OUTLINE_MAT=new THREE.MeshBasicMaterial({color:0xffe28a,side:THREE.BackSide,transparent:true,opacity:0.85,depthWrite:false,fog:false});let OUTLINE_GLOW=null;const GLOWS=new Set();let glowScanT=0;const _gv=new THREE.Vector3(),_gf=new THREE.Vector3();
+function olCopy(o,m){const n=o.isMesh?new THREE.Mesh(o.geometry,OUTLINE_MAT):new THREE.Group();n.position.copy(o.position);n.quaternion.copy(o.quaternion);n.scale.copy(o.scale);n.visible=o.visible;n.userData.root=m;if(o.isMesh){n.renderOrder=3;}for(const ch of o.children)n.add(olCopy(ch,m));return n;}
+function glowItem(m,secs){if(!m.userData.ol){const ol=new THREE.Group();for(const ch of m.children)ol.add(olCopy(ch,m));ol.scale.setScalar(1.22);ol.userData.root=m;if(!OUTLINE_GLOW)OUTLINE_GLOW=new THREE.SpriteMaterial({map:GLOW_TEX,color:0xffd36a,transparent:true,opacity:0.5,depthWrite:false,blending:THREE.AdditiveBlending,fog:false});const sp=new THREE.Sprite(OUTLINE_GLOW);sp.scale.set(0.75,0.75,1);sp.position.y=0.1;sp.userData.root=m;sp.raycast=()=>{};ol.add(sp);m.add(ol);m.userData.ol=ol;}
+  m.userData.glowT=Math.max(m.userData.glowT||0,secs);m.userData.ol.visible=true;GLOWS.add(m);}
+function glowTick(dt){if(GLOWS.size){OUTLINE_MAT.opacity=0.55+0.3*Math.sin(S.t*4);if(OUTLINE_GLOW)OUTLINE_GLOW.opacity=0.35+0.2*Math.sin(S.t*4);for(const m of GLOWS){m.userData.glowT-=dt;if(!m.parent||m.userData.glowT<=0){if(m.userData.ol)m.userData.ol.visible=false;GLOWS.delete(m);}}}
+  const L=LAMPS[held()];glowScanT-=dt;if(!L||!L.glow||!S.flashOn||S.state!=='play'||!room||!room.picks||glowScanT>0)return;glowScanT=0.12;
+  camera.getWorldDirection(_gf);const cp=camera.position,cosA=Math.cos(L.ang*0.95);
+  for(const m of room.picks){const pk=m.userData.pick;if(!m.parent||(pk&&pk.cond&&!pk.cond()))continue;m.getWorldPosition(_gv);_gv.y+=0.1;const dx=_gv.x-cp.x,dy=_gv.y-cp.y,dz=_gv.z-cp.z,d=Math.hypot(dx,dy,dz);if(d>L.dist||d<0.01)continue;
+    if((dx*_gf.x+dy*_gf.y+dz*_gf.z)/d<cosA)continue;if(room.los&&!room.los(cp.x,cp.z,_gv.x,_gv.z))continue;glowItem(m,L.glow);}}
 const lampHeld=()=>!!LAMPS[held()],lampBat=()=>{const L=LAMPS[held()];return L?(S[L.bat]||0):S.flashBat;};
 const countItem=id=>INV.hot.filter(x=>x===id).length+INV.bag.filter(x=>x===id).length;
 function takeItems(id,n){if(INV.hot[INV.sel]===id&&n>0){INV.hot[INV.sel]=null;n--;}for(const A2 of [INV.hot,INV.bag])for(let i=0;i<A2.length&&n>0;i++)if(A2[i]===id){A2[i]=null;n--;}renderHotbar();if(S.inv)renderInvPanel();}
@@ -3905,7 +3915,7 @@ function buildRoom(n){
   if(room&&room.lvl1&&room.duck)S.duckSave={x:room.duck.x,y:room.duck.y,z:room.duck.z};
   if(room){scene.remove(room.group);disposeGroup(room.group);room=null;}
   crsTrim(10);
-  S.climb=null;ELB.length=0;waterMats.length=0;camera.far=n===2?640:230;camera.updateProjectionMatrix();
+  S.climb=null;GLOWS.clear();ELB.length=0;waterMats.length=0;camera.far=n===2?640:230;camera.updateProjectionMatrix();
   // optimización: las 6 luces de lámpara y la del foco que revienta solo existen en el piso 0; en los demás pisos se apagan del todo
   {const f0=n===0;POOL.forEach(p=>{p.visible=f0;});BURST.visible=f0;}
   if(n===0){buildInfinite();addElevLights(room.group,false);renderMarks();return;}
@@ -4708,7 +4718,7 @@ function frame(now){
     if(lampHeld()&&S.flashOn){const LL=LAMPS[held()],bk=LL.bat;S[bk]=Math.max(0,(S[bk]||0)-dt*100/240);if(S[bk]<=0){S.flashOn=false;tone(160,0,.2,.1,'square');toast(LL.name+' se quedó sin batería');}}}
   if(MP.on&&live)coopDragTick(dt);
   if(live&&room&&room.fes)feTick(dt);if(S.feRide&&live)feRideTick(dt);
-  updateFlares(dt);updateCompass(dt);updateElevLights();updateWater(dt);if(S.noiseT>0)S.noiseT-=dt;if(S.barT>0)S.barT=Math.max(0,S.barT-dt);
+  updateFlares(dt);updateCompass(dt);glowTick(dt);updateElevLights();updateWater(dt);if(S.noiseT>0)S.noiseT-=dt;if(S.barT>0)S.barT=Math.max(0,S.barT-dt);
   if(S.scareShake>0)S.scareShake=Math.max(0,S.scareShake-dt);drawBat(Math.ceil(lampBat()||0));updateEbox(dt);updateAmbience(dt);
   let fk=1;if(lampBat()<10&&Math.random()<0.1)fk=0.15;if((S.duckNear||0)>2.5&&Math.random()<0.22)fk=0.08;
   const LH0=LAMPS[held()]||LAMPS.linterna;flash.intensity=((S.state==='play'||S.state==='pause')&&lampHeld()&&S.flashOn)?(S.floor===0?2.2:2.8)*LH0.k*(VM.id===held()?VM.raise:0)*fk:0;
