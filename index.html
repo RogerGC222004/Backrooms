@@ -2677,7 +2677,7 @@ function buildGen(n){MATC.clear();
     if(G.sunL){G.sunL.position.set(px+G.sunV.x*100,G.sunV.y*100,pz+G.sunV.z*100);G.sunL.target.position.set(px,0,pz);}
     if(G.water){G.water.position.set(Math.round(px/2)*2,G.waterLvl,Math.round(pz/2)*2);G.depthR.update(px,pz);}
     for(const c of G.chunks.values())if(c.bobs)for(const b of c.bobs){b.userData.bob+=dt;b.position.y=SEA+0.06+waveH(b.position.x,b.position.z,G.wA);b.rotation.z=Math.sin(b.userData.bob)*0.05+(waveH(b.position.x+1,b.position.z,G.wA)-waveH(b.position.x-1,b.position.z,G.wA))*0.4;}
-    for(const f of G.flick){f.t-=dt;if(f.t<0){f.t=0.05+Math.random()*(Math.random()<0.2?2:0.25);f.m.visible=Math.random()<0.75;}}
+    for(const f of G.flick){f.t-=dt*(1+5*(S.crNear||0));if(f.t<0){f.t=0.05+Math.random()*(Math.random()<0.2?2:0.25);f.m.visible=Math.random()<0.75;}}
     if(G.fuseGlow){G.fuseGlow.visible=!!(G.fuseM&&G.fuseM.parent);G.fuseGlow.material.opacity=0.45+0.35*Math.abs(Math.sin(S.t*2.4));}
     if(G.fuseM&&G.fuseM.parent){G.beepT=(G.beepT||0)-dt;const d=Math.hypot(P.x-sp.fuse.x,P.z-sp.fuse.z);if(G.beepT<=0&&d<70&&S.state==='play'){G.beepT=d<38?2.2:3.2;ptone(1760,0,0.09,0.06*clamp(1-d/70,0.12,1),'sine',panFrom(Math.atan2(sp.fuse.x-P.x,sp.fuse.z-P.z)));}
       G.fuseM.traverse(o=>{if(o.userData.glow)o.material.color.setScalar(0.55+0.45*Math.abs(Math.sin(S.t*2.4)));});}
@@ -2833,7 +2833,13 @@ function crGrin(kind){const k='grin'+kind;if(CRS[k])return CRS[k];const c=mk(256
     if(R()<0.85){g.fillStyle=col;g.beginPath();g.moveTo(x-w,yB+1);g.lineTo(x+w,yB+1);g.lineTo(x+(R()-0.5)*3,yB-l);g.fill();}}
   g.strokeStyle='rgba(220,230,240,.5)';g.lineWidth=1.5;for(let i=0;i<4;i++){const x=40+R()*170;g.beginPath();g.moveTo(x,40+R()*20);g.quadraticCurveTo(x+5,70,x+(R()-0.5)*6,80+R()*14);g.stroke();}
   const t=new THREE.CanvasTexture(c);KEEP.add(t);CRS[k]=t;return t;}
-function makeCreature(seed,opt){opt=opt||{};const seedA=seed;const r=rng(seed),pick=a=>a[Math.floor(r()*a.length)],rr=(a,b)=>a+r()*(b-a),ch=p=>r()<p;
+// pesos al elegir piezas: lo chistoso o de juguete sale poco; lo casi humano y deforme sale más
+const CR_W={rueda:0.15,globo:0.15,cono:0.12,mueble:0.2,caja:0.25,tv:0.25,disco:0.3,flor:0.25,guantes:0.2,anillos:0.2,zapatos:0.2,ruedas:0.15,corona:0.15,copa:0.15,cubeta:0.15,casco:0.4,lampara:0.25,peluche:0.15,farol:0.4,globos:0.15,corbata:0.2,paraguas:0.2,placa:0.3,luces:0.5,halo:0.4,muneco:0.4,muletas:0.5,pez:0.4,metal:0.6,cajamusical:0.6,fotos:0.8,
+  humana:3,craneo:2.5,alargada:2.5,todaboca:2.5,caras:2.5,lisa:2.5,dividida:2,mascara:1.6,muneca:1.6,costillas:2.6,hueco:2.2,jorobado:2.2,columna:2.2,segmentado:1.6,tubo:1.4,largos:2.4,dedos_largos:2.4,manos:2.2,tentaculos:1.5,enorme:2,colmillos:2,cosida:2,sonrisa:1.6,cuello_dientes:2,vertical:1.8,real:1.6,cuencas:2.2,llorones:2,negro:1.8,gigante:1.6,vendados:1.8,
+  heridas:2.4,ojos_cuerpo:2.4,bocas:2.2,clavos:2,cadenas:1.6,bultos:2,sin_piel:2.4,gemelo:2,maniqui:2.6,bolsa:2.4,velo:2.2,cera:2,organos:2,piel_colgante:2.4,cicatrices:2.2,cuello_roto:2.6,cabeza_invertida:2.4,rodillas_al_reves:2.4,cara_en_pecho:2.2,cabeza_giratoria:2,brazo_largo:2.4,estirado:2.2,cara_nuca:2.4,ojos_multiplican:2,boca_pecho:2,desprende:1.6,muchos_dedos:2.4,al_reves:2.2,boca_palma:2,puntitas:2,tacones:1.3,cosido:1.8,telescopico:1.6,
+  carne:1.8,arrugada:1.6,venas:1.8,quemada:1.4,papel:1.4,porcelana:2,sombra:1.8,translucido:1.4,bipedo:1.6,alto:1.8,nudillos:1.6,arana:1.4};
+function crPickW(a,R){if(typeof a[0]!=='string')return a[Math.floor(R()*a.length)];let t=0;for(const x of a)t+=CR_W[x]??1;let u=R()*t;for(const x of a){u-=CR_W[x]??1;if(u<0)return x;}return a[a.length-1];}
+function makeCreature(seed,opt){opt=opt||{};const seedA=seed;const r=rng(seed),pick=a=>crPickW(a,r),rr=(a,b)=>a+r()*(b-a),ch=p=>r()<p;
   const loco=pick(['bipedo','bipedo','alto','cuadrupedo','arana','flotante','reptante','cienpies','serpiente','nudillos','tripode','zancos','rueda','medio','baba']);
   const Hb=loco==='zancos'?rr(3.2,4.6):loco==='rueda'?rr(1.4,2.2):loco==='medio'?rr(0.8,1.2):loco==='baba'?rr(1.6,2.6):loco==='alto'?rr(3,4.2):loco==='arana'?rr(1,2):loco==='flotante'?rr(1.6,2.8):loco==='cuadrupedo'?rr(0.9,1.6):loco==='reptante'?rr(0.55,0.9):loco==='cienpies'?rr(0.6,1.1):loco==='serpiente'?rr(0.5,0.9):loco==='tripode'?rr(2.5,4):loco==='nudillos'?rr(1.6,2.5):rr(1.5,2.4);
   const sz=r();let K=sz<0.16?rr(0.28,0.55):sz<0.8?rr(0.8,1.35):rr(1.8,3.4);
@@ -3105,7 +3111,7 @@ function makeCreature(seed,opt){opt=opt||{};const seedA=seed;const r=rng(seed),p
     else if(e==='aletas'){const bp=backPts[0]||[0,torsoTop,0];const f=new THREE.Mesh(new THREE.ConeGeometry(Hb*0.15,Hb*0.4,3),skin2);f.scale.z=0.15;f.position.set(0,bp[1]+Hb*0.15,bp[2]);body.add(f);}}
   if(style==='translucido'){const core=sph(tw*0.5,1,1.2,1,new THREE.MeshBasicMaterial({color:new THREE.Color().setHSL(r(),0.8,0.6)}));core.position.y=torsoTop*0.75;body.add(core);C.core=core;}
   // ---- piezas nuevas: del bioma, cuerpos imposibles, objetos y mutaciones (rng aparte) ----
-  {const q=rng(seed+4242),qp=a=>a[Math.floor(q()*a.length)],qr=(a,b)=>a+q()*(b-a),qc=p=>q()<p,B=opt.biome||'';
+  {const q=rng(seed+4242),qp=a=>crPickW(a,q),qr=(a,b)=>a+q()*(b-a),qc=p=>q()<p,B=opt.biome||'';
     const ph=(c,sh,o)=>new THREE.MeshPhongMaterial(Object.assign({color:c,shininess:sh==null?20:sh},o||{}));
     const bp0=backPts[0]||[0,torsoTop,0],up=neckDir==='up';C.parts.bioma=[];
     const addTorso=(m,sx,sy,sz,yy)=>{const t=sph(1,tw*sx,torsoTop*sy,tw*sz,m);t.position.set(0,yy,neckDir==='front'?0:0);body.add(t);return t;};
@@ -3131,13 +3137,13 @@ function makeCreature(seed,opt){opt=opt||{};const seedA=seed;const r=rng(seed),p
         if(B==='hospital'&&qc(0.7)){const mask=sph(hr*0.62,1,0.6,0.4,ph(0x9ad0d8,5));mask.position.set(0,hr*0.75,hr*0.82);head.add(mask);C.parts.bioma.push('cubrebocas');}
         if(B==='biblioteca')for(let k=0;k<4;k++){const bk=new THREE.Mesh(new THREE.BoxGeometry(tw*0.35,tw*0.5,tw*0.1),ph(qp([0x7a1a1a,0x1a3a5a,0x2a4a2a,0x5a3a1a]),10));const a=q()*6.283;bk.position.set(Math.cos(a)*tw*0.9,torsoTop*qr(0.4,0.8),Math.sin(a)*tw*0.68);bk.rotation.set(q(),a,q());body.add(bk);}
         if(B==='comercial'){const pt=new THREE.Mesh(new THREE.PlaneGeometry(tw*0.25,tw*0.15),new THREE.MeshBasicMaterial({color:0xff4a2a,side:THREE.DoubleSide}));pt.position.set(-tw*0.9,torsoTop*0.5,tw*0.3);pt.rotation.y=0.8;body.add(pt);C.parts.bioma.push('etiqueta');}}
-      else if(['ciudad','estacionamiento','carretera','miniatura'].includes(B)){C.parts.bioma.push('cono');const cn=new THREE.Mesh(new THREE.ConeGeometry(hr*0.9,hr*2.2,16),ph(0xff6a1a,40));cn.position.y=hr*2.0;head.add(cn);
+      else if(['ciudad','estacionamiento','carretera','miniatura'].includes(B)&&q()<0.18){C.parts.bioma.push('cono');const cn=new THREE.Mesh(new THREE.ConeGeometry(hr*0.9,hr*2.2,16),ph(0xff6a1a,40));cn.position.y=hr*2.0;head.add(cn);
         const st=new THREE.Mesh(new THREE.CylinderGeometry(hr*0.62,hr*0.72,hr*0.3,16,1,true),new THREE.MeshBasicMaterial({color:0xf0f0f0}));st.position.y=hr*2.2;head.add(st);
         if(up){const vs=addTorso(ph(0xd8ff2a,30,{emissive:0x2a3a00}),1.06,0.15,0.8,torsoTop*0.72);C.parts.bioma.push('chaleco');}}
       else if(B==='dunas'){C.parts.bioma.push('momia');C.wraps=true;const wm=ph(0xc8b890,4);for(let k=0;k<8;k++){const w=new THREE.Mesh(new THREE.TorusGeometry(tw*0.95,tw*0.06,4,16),wm);w.rotation.x=Math.PI/2+(q()-0.5)*0.5;w.position.y=torsoTop*(0.35+k*0.08);w.scale.set(1,0.75,1);body.add(w);}
         const hw2=new THREE.Mesh(new THREE.TorusGeometry(hr*0.95,hr*0.12,4,16),wm);hw2.position.y=hr*1.1;hw2.rotation.x=Math.PI/2+0.3;head.add(hw2);}
       else if(B==='cuevas'){C.parts.bioma.push('cristales');const cm=new THREE.MeshBasicMaterial({color:new THREE.Color().setHSL(q(),0.7,0.6)});for(let k=0;k<7;k++){const cr2=new THREE.Mesh(new THREE.ConeGeometry(Hb*0.03,Hb*qr(0.1,0.3),5),cm);cr2.position.set(bp0[0]+(q()-0.5)*tw*1.2,bp0[1],bp0[2]+(q()-0.5)*tw*0.8);cr2.rotation.set(-0.3+(q()-0.5)*0.8,0,(q()-0.5)*0.8);body.add(cr2);}}
-      else if(B==='feria'){C.parts.bioma.push('payaso');const nz=sph(hr*0.22,1,1,1,new THREE.MeshPhongMaterial({color:0xe02020,shininess:120}));nz.position.set(0,hr*0.95,hr*1.0);head.add(nz);const hat=new THREE.Mesh(new THREE.ConeGeometry(hr*0.45,hr*1.3,12),new THREE.MeshLambertMaterial({map:nbTex('stripes')}));hat.position.set(hr*0.2,hr*2.4,0);hat.rotation.z=-0.3;head.add(hat);
+      else if(B==='feria'&&q()<0.3){C.parts.bioma.push('payaso');const nz=sph(hr*0.22,1,1,1,new THREE.MeshPhongMaterial({color:0xe02020,shininess:120}));nz.position.set(0,hr*0.95,hr*1.0);head.add(nz);const hat=new THREE.Mesh(new THREE.ConeGeometry(hr*0.45,hr*1.3,12),new THREE.MeshLambertMaterial({map:nbTex('stripes')}));hat.position.set(hr*0.2,hr*2.4,0);hat.rotation.z=-0.3;head.add(hat);
         if(up){const ruf=new THREE.Mesh(new THREE.TorusGeometry(tw*0.6,tw*0.18,6,16),ph(0xf0f0f0,10));ruf.rotation.x=Math.PI/2;ruf.position.y=torsoTop;body.add(ruf);}}
       else if(['juegos','maquinas'].includes(B)){C.parts.bioma.push(B==='juegos'?'pelotas':'tuberias');if(B==='juegos'){for(let k=0;k<10;k++){const a=q()*6.283,bb=sph(Hb*0.03,1,1,1,ph(qp([0xd83a3a,0x3a6ac8,0xe8c83a,0x3ab85a]),80));bb.position.set(Math.cos(a)*tw*0.95,torsoTop*qr(0.2,0.9),Math.sin(a)*tw*0.7);body.add(bb);}}
         else{const pm=lam(nbTex('pipe'));for(let k=0;k<3;k++){const pp=cyl(Hb*0.025,Hb*0.025,Hb*qr(0.3,0.6),pm,6);pp.position.set((q()-0.5)*tw,bp0[1]+Hb*0.1,bp0[2]);pp.rotation.set(-0.5+q(),0,(q()-0.5));body.add(pp);}const st=glowSprite(0xd8d8d8,Hb*0.4,true);st.material.opacity=0.25;st.position.set(0,bp0[1]+Hb*0.35,bp0[2]);body.add(st);}}
@@ -3177,7 +3183,7 @@ function makeCreature(seed,opt){opt=opt||{};const seedA=seed;const r=rng(seed),p
         for(let k=0;k<5;k++){const rb=new THREE.Mesh(new THREE.TorusGeometry(tw*0.86,tw*0.04,5,16,Math.PI*0.8),bone);rb.rotation.set(Math.PI/2,0,Math.PI*0.6);rb.position.y=torsoTop*(0.55+k*0.08);body.add(rb);}}
       else if(mu==='jinete'&&!opt.rider){const Rd=makeCreature(seed*7+3,{maxH:Hb*0.5,maxR:tw*1.2,noLight:true,rider:true,biome:B});Rd.root.position.set(bp0[0],bp0[1]+tw*0.3,bp0[2]);body.add(Rd.root);C.rider=Rd;}}}
   // ---- más piezas: cuellos, colas, pies, manos, sombreros, superficie, proporciones, materiales y comportamientos (rng aparte) ----
-  {const q=rng(seed+7777),qp=a=>a[Math.floor(q()*a.length)],qr=(a,b)=>a+q()*(b-a),qc=p=>q()<p,up=neckDir==='up';
+  {const q=rng(seed+7777),qp=a=>crPickW(a,q),qr=(a,b)=>a+q()*(b-a),qc=p=>q()<p,up=neckDir==='up';
     const ph=(c,sh,o)=>new THREE.MeshPhongMaterial(Object.assign({color:c,shininess:sh==null?20:sh},o||{}));const bpL=backPts[backPts.length-1]||[0,torsoTop*0.6,0];
     // cuellos
     if(qc(0.4)&&up){const nk=qp(['telescopico','varios','acordeon','cosido']);C.parts.cuello=nk;const top=head.position.y;
@@ -3284,10 +3290,19 @@ function makeCreature(seed,opt){opt=opt||{};const seedA=seed;const r=rng(seed),p
   if(agr&&C.qa<0.85){const opts=opt.ceil?(C.canCeil?['techo','techo','pared','suelo']:['pared','suelo','salto']):['suelo','salto','salto'];if(C.fly)opts.push('aire','aire');C.ambush=opts[Math.floor(C.qa*97%1*opts.length)];C.parts.emboscada=C.ambush;}
   const sk=clamp(Math.sqrt(k),0.7,1.4);C.walk=rr(1.0,1.9)*sk;C.run=(C.beh==='acechador'?rr(4.2,6):C.beh==='cazador'?rr(3.7,4.3):rr(3.5,4.2))*clamp(0.8+0.2*k,0.85,1.05);
   C.voice={base:rr(60,520)/Math.sqrt(Math.max(0.3,k)),type:pick(['sawtooth','square','triangle','sine']),fm:rr(0,1),len:rr(0.4,1.4)*clamp(Math.sqrt(k),0.6,1.6),q:rr(1,8),every:rr(6,15)};
+  // colores apagados y enfermizos: nada de colores de juguete
+  {const seen=new Set(),hsl={};C.root.traverse(o=>{if(!o.isMesh||!o.material)return;for(const m of (Array.isArray(o.material)?o.material:[o.material])){if(seen.has(m)||m.userData.desat||!(m.isMeshPhongMaterial||m.isMeshLambertMaterial||m.isMeshStandardMaterial)||!m.color)continue;seen.add(m);m.userData.desat=1;m.color.getHSL(hsl);if(hsl.s>0.32){m.color.setHSL(hsl.h,0.32+(hsl.s-0.32)*0.25,hsl.l*0.85);}}});}
   if(!opt.noBake)crBake(C);
+  crEyeShine(C);
   return C;}
 // optimización: las piezas de la criatura que no se mueven entre sí (mismo material, mismo padre) se juntan en una sola malla.
 // Se ve idéntico: cada pieza conserva su forma y posición exacta, solo que se dibuja junto con sus vecinas.
+function crEyeShine(C){C.root.updateMatrixWorld(true);
+  // sin ojos registrados: dos puntos en el frente de la cabeza
+  if((!C.eyes||!C.eyes.length)&&C.head&&C.parts.ojos!=='vendados'){const bb=new THREE.Box3().setFromObject(C.head);if(!bb.isEmpty()){const c=bb.getCenter(new THREE.Vector3()),sz=bb.getSize(new THREE.Vector3()),inv=new THREE.Matrix4().copy(C.root.matrixWorld).invert(),fw=new THREE.Vector3(0,0,1).transformDirection(C.root.matrixWorld),rt=new THREE.Vector3(1,0,0).transformDirection(C.root.matrixWorld);C.eyes=C.eyes||[];
+    const w=Math.max(sz.x,sz.z);for(const sd of [-1,1]){const pnt=c.clone().addScaledVector(fw,Math.max(sz.z,sz.x)*0.5).addScaledVector(rt,sd*w*0.2);pnt.y+=sz.y*0.08;const g=new THREE.Group();C.head.worldToLocal(pnt);g.position.copy(pnt);C.head.add(g);C.eyes.push(g);}C.eyeAuto=true;}}
+  if(!C.eyes||!C.eyes.length)return;C.root.updateMatrixWorld(true);const m=new THREE.SpriteMaterial({map:GLOW_TEX,color:[0xdfff9a,0xfff0a0,0xff6a4a,0xa8f0ff][Math.floor(Math.abs(C.seedA||0)%4)],transparent:true,opacity:0.15,depthWrite:false,blending:THREE.AdditiveBlending,fog:false});C.shineM=m;const ws=new THREE.Vector3();
+  for(const e of C.eyes.slice(0,8)){e.getWorldScale(ws);const sc=Math.max(ws.x,ws.y,ws.z)||1,sp=new THREE.Sprite(m);sp.scale.setScalar(Math.min(0.5,0.16+0.04*(C.H||2))/sc);sp.raycast=()=>{};sp.renderOrder=4;e.add(sp);}}
 function crBake(C){const ref=new Set(),seen=new Set();
   const scan=(v,d)=>{if(!v||typeof v!=='object'||seen.has(v)||d>5)return;seen.add(v);if(v.isObject3D){ref.add(v);return;}if(v.isMaterial||v.isTexture||v.isBufferGeometry||v.isColor||v.isVector3)return;
     if(Array.isArray(v)){for(const x of v)scan(x,d+1);return;}for(const k in v){if(k==='root'&&d===0)continue;scan(v[k],d+1);}};
@@ -3422,8 +3437,10 @@ function spawnCreature(G){const C=makeCreature(G.spec.cseed,G.crOpt);G.group.add
   let x=0,z=30;for(let t=0;t<40;t++){const a=r()*6.283,d=C.beh==='guia'?14+r()*6:36+r()*16;x=Math.sin(a)*d;z=Math.cos(a)*d;if(G.spec.half&&(Math.abs(x)>G.spec.half-4||Math.abs(z)>G.spec.half-4))continue;if(!G.blocked(x,z,C.rad))break;}
   Object.assign(C,{x:x,z:z,y:0,yaw:r()*6.28,st:'idle',stT:2,tx:x,tz:z,spd:0,hitCd:0,seenT:0,met:false,dropped:0});C.y=crGroundY(G,x,z,C);C.root.position.set(x,C.y,z);
   const q=rng(G.spec.cseed+2027);G.giant=!!(G.crOpt&&G.crOpt.giant);
+  C.jerk=q()<0.45;C.statue=C.agr&&q()<0.25;C.creepHead=q()<0.6;C.snapT=3+q()*5;C.peekCd=18+q()*25;
   if(G.giant){C.beh='colosal';C.agr=true;C.ambush=null;C.canCeil=false;C.fly=false;C.walk*=0.8;C.run=C.walk*1.3;C.parts.comportamiento='colosal';}
-  else if(C.agr&&!G.spec.outdoor&&HIDE_BIOMES.includes(G.spec.biome)&&q()<0.55){C.ambush='escondite';C.parts.emboscada='escondite';}
+  else if(C.agr&&!G.spec.outdoor&&HIDE_BIOMES.includes(G.spec.biome)&&q()<0.55){C.ambush='escondite';C.parts.emboscada='escondite';C.statue=false;}
+  if(G.giant)C.statue=false;if(C.statue)C.parts.mirada='estatua';if(C.jerk)C.parts.movimiento='a_tirones';
   // crías: versiones pequeñas que corren alrededor y avisan cuando te ven
   G.minions=[];if(C.agr&&!G.giant&&q()<0.4){const nM=2+(q()<0.3?1:0);for(let i=0;i<nM;i++){const M=makeCreature(G.spec.cseed,Object.assign({},G.crOpt,{maxH:0.75,maxR:0.3,noLight:true}));
       M.canCeil=false;M.ambush=null;M.fly=false;M.minion=true;Object.assign(M,{x:x+Math.sin(i*2.1)*2,z:z+Math.cos(i*2.1)*2,y:0,yaw:0,spd:0,ang:i*2.1,cd:2+i,st:'idle'});M.y=crGroundY(G,M.x,M.z,M);M.root.position.set(M.x,M.y,M.z);G.group.add(M.root);G.minions.push(M);}}
@@ -3512,9 +3529,15 @@ function updateCreature(G,dt){const C=G.cr;if(!C)return;const host=!MP.on||MP.ho
     G.crNT=NT;if(G.spec.inf&&NT&&nd>40&&!anySeen){C.farT=(C.farT||0)+dt;if(C.farT>3){C.farT=0;if(crRelocate(G,TG,16,22,14,true)){C.st='idle';C.stT=2;C.tx=C.x;C.tz=C.z;C.root.position.set(C.x,C.y,C.z);}}}else C.farT=0;
     const ambOn=C.ambush&&crAmbush(G,C,TG,NT,nd,anySeen,dt,hear,pan);
     if(!ambOn&&C.canCeil&&!C.hang){C.climbT-=dt;if(C.climbT<=0){C.climbT=8+Math.random()*18;C.baseSurf=C.baseSurf?0:1;C.surfTgt=C.baseSurf;}}
+    // asomarse: aparece quieta en el borde de tu vista y se va si la miras
+    if(!ambOn&&!C.peekT&&C.agr&&!C.hidden&&C.beh!=='colosal'&&C.st!=='hunt'&&C.st!=='retreat'&&NT&&NT.me&&!S.hook){C.peekCd-=dt;if(C.peekCd<=0&&nd>9&&nd<34&&!anySeen){C.peekCd=8;
+        const fy=Math.atan2(-Math.sin(P.yaw),-Math.cos(P.yaw));for(let k=0;k<10;k++){const a=fy+(k%2?1:-1)*(0.55+Math.random()*0.25),dd=12+Math.random()*6,x=P.x+Math.sin(a)*dd,z=P.z+Math.cos(a)*dd;
+          if(G.spec.half&&(Math.abs(x)>G.spec.half-4||Math.abs(z)>G.spec.half-4))continue;if(G.blocked(x,z,C.rad)||inSafeAt(x,0,z)||!G.los(P.x,P.z,x,z))continue;C.x=x;C.z=z;C.y=crGroundY(G,x,z,C);C.tx=x;C.tz=z;C.peekT=2.8;C.peekSeen=0;C.root.position.set(C.x,C.y,C.z);break;}}}
     if(ambOn){}
     else if(!NT){C.spd=0;}
     else if(C.st==='retreat'){const ax=C.x-NT.x,az=C.z-NT.z,l=Math.hypot(ax,az)||1;crStep(G,C,C.x+ax/l*5,C.z+az/l*5,C.run*0.9,dt);if(C.stT<=0||nd>30){if(!anySeen&&crRelocate(G,TG)){}C.st='idle';C.stT=4;}}
+    else if(C.peekT>0){C.peekT-=dt;C.spd=0;crFace(C,NT.x,NT.z,dt*3);if(anySeen)C.peekSeen=(C.peekSeen||0)+dt;if(C.peekT<=0||C.peekSeen>0.45){C.peekT=0;C.peekCd=35+Math.random()*40;if(crRelocate(G,TG,20,28,16,true)){C.st='idle';C.stT=3;C.tx=C.x;C.tz=C.z;C.root.position.set(C.x,C.y,C.z);}}}
+    else if(C.statue&&C.agr&&nd<40){if(anySeen){C.spd=0;C.frozen=true;}else{C.frozen=false;crStep(G,C,NT.x,NT.z,C.run*1.1,dt);}}
     else if(C.beh==='colosal'){crStep(G,C,NT.x,NT.z,anySeen?C.walk*0.7:C.run,dt);}
     else if(C.alertT>0&&C.agr){C.alertT-=dt;crStep(G,C,C.ax,C.az,C.run*0.95,dt);if(Math.hypot(C.ax-C.x,C.az-C.z)<1.5)C.alertT=0;}
     else{const b=C.beh;
@@ -3543,10 +3566,11 @@ function updateCreature(G,dt){const C=G.cr;if(!C)return;const host=!MP.on||MP.ho
       else if(b==='imitador'){const mv=NT.mv>0.1;if(anySeen){C.spd=0;crFace(C,NT.x,NT.z,dt);}else if(mv&&nd>6)crStep(G,C,NT.x,NT.z,C.walk*1.8,dt);else{C.spd=0;crFace(C,NT.x,NT.z,dt);}if(nd>40)crRelocate(G,[]);}
       // contacto con jugadores
       if(C.agr&&C.hitCd<=0&&C.st!=='retreat'){for(const t of TG){if(Math.hypot(t.x-C.x,t.z-C.z)<C.rad+0.75&&Math.abs(t.y-C.y)<2.5){C.hitCd=9;C.st='retreat';C.stT=5;break;}}}}
-    animCreature(C,dt,C.spd);}
+    crAnim(C,dt,C.spd);}
   else{const k=MP.crk;if(k){const ox=C.x,oz=C.z,f=Math.min(1,dt*8);C.x+=(k[0]-C.x)*f;C.y+=(k[1]-C.y)*f;C.z+=(k[2]-C.z)*f;let dy=k[3]-C.yaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));C.yaw+=dy*f;if(Math.hypot(k[0]-C.x,k[2]-C.z)>8){C.x=k[0];C.y=k[1];C.z=k[2];}
-      animCreature(C,dt,Math.hypot(C.x-ox,C.z-oz)/Math.max(dt,0.001));}}
-  if(host)C.y+=(crGroundY(G,C.x,C.z)-C.y)*Math.min(1,dt*6);C.root.position.set(C.x,C.y,C.z);C.root.rotation.y=C.yaw;
+      crAnim(C,dt,Math.hypot(C.x-ox,C.z-oz)/Math.max(dt,0.001));}}
+  if(host)C.y+=(crGroundY(G,C.x,C.z)-C.y)*Math.min(1,dt*6);if(!C.jerk||C.jkDid){C.root.position.set(C.x,C.y,C.z);C.root.rotation.y=C.yaw;}C.jkDid=false;
+  crCreep(G,C,dt,myD,pan);
   if(!host&&MP.crk&&MP.crk.length>=9){const hid=MP.crk[8]===1;if(hid!==!!C.hidden){C.hidden=hid;C.root.visible=!hid;}}
   crTrails(G,C,dt);if(G.minions&&G.minions.length)minionsTick(G,C,dt,host);
   if(host)crPivot(C,dt);else if(MP.crk&&MP.crk.length>=8&&C.pivot){C.surfK=MP.crk[4];C.burrow=MP.crk[5];C.flyK=MP.crk[6];C.leapY=MP.crk[7];crPivot(C,0);}
@@ -3584,6 +3608,14 @@ function minionsTick(G,C,dt,host){const far=60*60;
       if(M.cd<=0&&C.agr){for(const t of TG){if(Math.hypot(t.x-M.x,t.z-M.z)<13&&G.los(M.x,M.z,t.x,t.z)){M.cd=7;C.alertT=7;C.ax=t.x;C.az=t.z;const hm=clamp(1-Math.hypot(M.x-P.x,M.z-P.z)/30,0,1),pn=panFrom(Math.atan2(M.x-P.x,M.z-P.z));if(hm>0.05){[0,0.12,0.24].forEach(dl=>ptone(1500+Math.random()*900,dl,0.08,0.06*hm,'square',pn));}break;}}}}}
   else if(MP.cm){G.minions.forEach((M,i)=>{const k=MP.cm[i];if(!k)return;const ox=M.x,oz=M.z,f=Math.min(1,dt*8);M.x+=(k[0]-M.x)*f;M.z+=(k[1]-M.z)*f;M.yaw=k[2];M.spd=Math.hypot(M.x-ox,M.z-oz)/Math.max(dt,0.001);M.y=crGroundY(G,M.x,M.z,M);});}
   for(const M of G.minions){const near=(M.x-P.x)**2+(M.z-P.z)**2<far;M.root.visible=near&&!C.hidden;if(!near)continue;animCreature(M,dt,M.spd||0);M.root.position.set(M.x,M.y,M.z);M.root.rotation.y=M.yaw||0;}}
+// animación a tirones (como si le faltaran cuadros) y congelada mientras la miras
+function crAnim(C,dt,spd){if(C.frozen)return;if(C.jerk){C.jkA=(C.jkA||0)+dt;if(C.jkA<(C.jkStep||0.1))return;const d=C.jkA;C.jkA=0;C.jkStep=1/(6+Math.random()*7);C.jkDid=true;animCreature(C,d,spd);}else animCreature(C,dt,spd);}
+// detalles inquietantes: cabeza que se tuerce, ojos que reflejan la linterna, respiración y luces que fallan cerca
+function crCreep(G,C,dt,myD,pan){
+  if(C.creepHead&&C.head&&!C.frozen){C.snapT-=dt;if(C.snapT<=0){if(C.snapZ){C.snapZ=0;C.snapT=2.5+Math.random()*6;}else{C.snapZ=(Math.random()<0.5?-1:1)*(0.7+Math.random()*0.8);C.snapT=0.25+Math.random()*0.5;}}if(C.snapZ)C.head.rotation.z=C.snapZ;}
+  if(C.shineM){let k=0.12;if(lampHeld()&&S.flashOn&&myD>2.5&&myD<(flash.distance||26)*1.1&&!C.hidden){_gf.set(C.x-camera.position.x,(C.y+(C.H||2)*0.8)-camera.position.y,C.z-camera.position.z).normalize();camera.getWorldDirection(_gv);if(_gf.dot(_gv)>Math.cos((flash.angle||0.42)*1.15))k=1;}C.shineM.opacity+=(k-C.shineM.opacity)*Math.min(1,dt*6);}
+  const near=C.agr&&!meSafe()?clamp(1-myD/16,0,1):0;S.crNear=near;
+  if(C.agr&&myD<11&&!S.crSeen&&S.state==='play'){C.brT=(C.brT==null?1:C.brT)-dt;if(C.brT<=0){C.brT=3+Math.random()*1.5;const v=0.07*clamp(1-myD/11,0.1,1);pnoise(0.9,380,v,pan,1.2);setTimeout(()=>pnoise(1.1,260,v*0.9,pan,1.2),1000);}}}
 function crWander(G,C,dt){if(C.stT<=0||Math.hypot(C.tx-C.x,C.tz-C.z)<1){C.stT=3+Math.random()*5;const a=Math.random()*6.283,d=6+Math.random()*12;C.tx=C.x+Math.sin(a)*d;C.tz=C.z+Math.cos(a)*d;
     // en mapas infinitos deambula alrededor de ti en vez de irse lejos
     const NT=G.crNT;if(G.spec.inf&&NT&&Math.hypot(NT.x-C.x,NT.z-C.z)>14){const b=Math.random()*6.283,e=5+Math.random()*9;C.tx=NT.x+Math.sin(b)*e;C.tz=NT.z+Math.cos(b)*e;}
@@ -3980,7 +4012,7 @@ function buildRoom(n){
   if(room&&room.lvl1&&room.duck)S.duckSave={x:room.duck.x,y:room.duck.y,z:room.duck.z};
   if(room){scene.remove(room.group);disposeGroup(room.group);room=null;}
   crsTrim(10);
-  S.climb=null;GLOWS.clear();ELB.length=0;waterMats.length=0;camera.far=n===2?640:230;camera.updateProjectionMatrix();
+  S.climb=null;S.crNear=0;GLOWS.clear();ELB.length=0;waterMats.length=0;camera.far=n===2?640:230;camera.updateProjectionMatrix();
   // optimización: las 6 luces de lámpara y la del foco que revienta solo existen en el piso 0; en los demás pisos se apagan del todo
   {const f0=n===0;POOL.forEach(p=>{p.visible=f0;});BURST.visible=f0;}
   if(n===0){buildInfinite();addElevLights(room.group,false);renderMarks();return;}
@@ -4786,7 +4818,7 @@ function frame(now){
   if(live&&room&&room.fes)feTick(dt);if(S.feRide&&live)feRideTick(dt);
   updateFlares(dt);updateCompass(dt);glowTick(dt);updateElevLights();updateWater(dt);if(S.noiseT>0)S.noiseT-=dt;if(S.barT>0)S.barT=Math.max(0,S.barT-dt);
   if(S.scareShake>0)S.scareShake=Math.max(0,S.scareShake-dt);drawBat(Math.ceil(lampBat()||0));updateEbox(dt);updateAmbience(dt);
-  let fk=1;if(lampBat()<10&&Math.random()<0.1)fk=0.15;if((S.duckNear||0)>2.5&&Math.random()<0.22)fk=0.08;
+  let fk=1;if(lampBat()<10&&Math.random()<0.1)fk=0.15;if(room&&room.gen&&(S.crNear||0)>0.05&&Math.random()<0.16*S.crNear)fk=0.1;if((S.duckNear||0)>2.5&&Math.random()<0.22)fk=0.08;
   const LH0=LAMPS[held()]||LAMPS.linterna;flash.intensity=((S.state==='play'||S.state==='pause')&&lampHeld()&&S.flashOn)?(S.floor===0?2.2:2.8)*LH0.k*(VM.id===held()?VM.raise:0)*fk:0;
   if(flash.userData.lamp!==LH0){flash.userData.lamp=LH0;flash.distance=LH0.dist;flash.angle=LH0.ang;flash.shadow.camera.far=LH0.dist;flash.position.x=LH0.x;}
   // optimización: en pausa jugando solo la imagen no cambia, así que se dibuja una vez y luego se deja quieta
