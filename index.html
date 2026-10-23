@@ -193,6 +193,8 @@ html,body{height:100%;margin:0;background:var(--void);color:var(--paper);overflo
 #card.on{opacity:1}
 #card b{display:block;font-family:var(--f-vhs);font-weight:400;font-size:clamp(56px,10vw,110px);letter-spacing:.1em;color:var(--paper);text-shadow:3px 0 rgba(255,50,30,.5),-3px 0 rgba(40,190,255,.4)}
 #card span{font-family:var(--f-vhs);font-size:24px;letter-spacing:.24em;color:var(--dim);text-transform:uppercase}
+#card em{display:block;margin-top:14px;font-style:normal;font-family:var(--f-vhs);font-size:22px;letter-spacing:.18em;text-transform:uppercase}
+#card em i{font-style:normal;letter-spacing:.08em}
 #hook{position:fixed;inset:0;z-index:95;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:radial-gradient(ellipse at center,rgba(60,0,0,0) 35%,rgba(90,0,0,.55) 100%);touch-action:none;user-select:none;-webkit-user-select:none;font-family:var(--f-vhs);color:#ffe8d8;text-align:center;padding:16px}
 #hook[hidden]{display:none}
 #hookName{font-size:clamp(26px,5vw,44px);letter-spacing:.06em;color:#ff6a50;text-shadow:2px 0 rgba(0,0,0,.8),0 0 18px rgba(255,40,20,.6);animation:hkShake .18s infinite}
@@ -407,7 +409,7 @@ html,body{height:100%;margin:0;background:var(--void);color:var(--paper);overflo
   </ul>
 </section>
 
-<div id="card"><b id="cardTitle">PISO 0</b><span id="cardSub">Nivel 0</span></div>
+<div id="card"><b id="cardTitle">PISO 0</b><span id="cardSub">Nivel 0</span><em id="cardThreat"></em></div>
 <div id="hook" hidden><div id="hookName"></div><div id="hookTap"><svg viewBox="0 0 24 24" fill="none" stroke="#ffe8d8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11V5a1.5 1.5 0 0 1 3 0v5"/><path d="M12 10V8.5a1.5 1.5 0 0 1 3 0V11"/><path d="M15 10.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1a5 5 0 0 1-4.3-2.5L4.5 14.6a1.5 1.5 0 0 1 2.4-1.8L9 15"/><path d="M5 4l-1.5-1.5M8 2.5V1M2.5 7H1"/></svg></div><div id="hookHint"></div><div class="hkLbl">SOLTARTE</div><div class="hkBar"><i id="hookFill"></i></div><div class="hkTime"><i id="hookTime"></i></div></div>
 <div id="toast"></div>
 <div id="fade"></div>
@@ -763,10 +765,11 @@ const held=()=>INV.hot[INV.sel];
 const LAMPS={linterna:{bat:'flashBat',n:1,k:1,dist:26,ang:0.42,x:0.2,name:'La linterna'},linternaG:{bat:'flashBat2',n:2,k:1.9,dist:46,ang:0.62,x:0.2,name:'La linterna grande',glow:10},reflector:{bat:'flashBat3',n:3,k:2.8,dist:62,ang:0.78,x:0,name:'El reflector',glow:30}};
 // contorno brillante: los objetos que alumbras con la linterna grande (10 s) o el reflector (30 s) siguen marcados aunque apagues o voltees
 const OUTLINE_MAT=new THREE.MeshBasicMaterial({color:0xffe28a,side:THREE.BackSide,transparent:true,opacity:0.85,depthWrite:false,fog:false});let OUTLINE_GLOW=null;const GLOWS=new Set();let glowScanT=0;const _gv=new THREE.Vector3(),_gf=new THREE.Vector3();
-function olCopy(o,m){const n=o.isMesh?new THREE.Mesh(o.geometry,OUTLINE_MAT):new THREE.Group();n.position.copy(o.position);n.quaternion.copy(o.quaternion);n.scale.copy(o.scale);n.visible=o.visible;n.userData.root=m;if(o.isMesh){n.renderOrder=3;}for(const ch of o.children)n.add(olCopy(ch,m));return n;}
-function glowItem(m,secs){if(!m.userData.ol){const ol=new THREE.Group();for(const ch of m.children)ol.add(olCopy(ch,m));ol.scale.setScalar(1.22);ol.userData.root=m;if(!OUTLINE_GLOW)OUTLINE_GLOW=new THREE.SpriteMaterial({map:GLOW_TEX,color:0xffd36a,transparent:true,opacity:0.5,depthWrite:false,blending:THREE.AdditiveBlending,fog:false});const sp=new THREE.Sprite(OUTLINE_GLOW);sp.scale.set(0.75,0.75,1);sp.position.y=0.1;sp.userData.root=m;sp.raycast=()=>{};ol.add(sp);m.add(ol);m.userData.ol=ol;}
+const OUTLINE_MAT_R=new THREE.MeshBasicMaterial({color:0xff3a2a,side:THREE.BackSide,transparent:true,opacity:0.85,depthWrite:false,fog:false});
+function olCopy(o,m,mat){const n=o.isMesh?new THREE.Mesh(o.geometry,mat||OUTLINE_MAT):new THREE.Group();n.position.copy(o.position);n.quaternion.copy(o.quaternion);n.scale.copy(o.scale);n.visible=o.visible;n.userData.root=m;if(o.isMesh){n.renderOrder=3;}for(const ch of o.children)n.add(olCopy(ch,m,mat));return n;}
+function glowItem(m,secs){if(!m.userData.ol){const ol=new THREE.Group(),mim=!!(m.userData.pick&&m.userData.pick.mimic);for(const ch of m.children)ol.add(olCopy(ch,m,mim?OUTLINE_MAT_R:OUTLINE_MAT));ol.scale.setScalar(1.22);ol.userData.root=m;if(!OUTLINE_GLOW)OUTLINE_GLOW=new THREE.SpriteMaterial({map:GLOW_TEX,color:0xffd36a,transparent:true,opacity:0.5,depthWrite:false,blending:THREE.AdditiveBlending,fog:false});const sp=new THREE.Sprite(OUTLINE_GLOW);sp.scale.set(0.75,0.75,1);sp.position.y=0.1;sp.userData.root=m;sp.raycast=()=>{};ol.add(sp);m.add(ol);m.userData.ol=ol;}
   m.userData.glowT=Math.max(m.userData.glowT||0,secs);m.userData.ol.visible=true;GLOWS.add(m);}
-function glowTick(dt){if(GLOWS.size){OUTLINE_MAT.opacity=0.55+0.3*Math.sin(S.t*4);if(OUTLINE_GLOW)OUTLINE_GLOW.opacity=0.35+0.2*Math.sin(S.t*4);for(const m of GLOWS){m.userData.glowT-=dt;if(!m.parent||m.userData.glowT<=0){if(m.userData.ol)m.userData.ol.visible=false;GLOWS.delete(m);}}}
+function glowTick(dt){if(GLOWS.size){OUTLINE_MAT.opacity=0.55+0.3*Math.sin(S.t*4);OUTLINE_MAT_R.opacity=0.6+0.35*Math.sin(S.t*7);if(OUTLINE_GLOW)OUTLINE_GLOW.opacity=0.35+0.2*Math.sin(S.t*4);for(const m of GLOWS){m.userData.glowT-=dt;if(!m.parent||m.userData.glowT<=0){if(m.userData.ol)m.userData.ol.visible=false;GLOWS.delete(m);}}}
   const L=LAMPS[held()];glowScanT-=dt;if(!L||!L.glow||!S.flashOn||S.state!=='play'||!room||!room.picks||glowScanT>0)return;glowScanT=0.12;
   camera.getWorldDirection(_gf);const cp=camera.position,cosA=Math.cos(L.ang*0.95);
   for(const m of room.picks){const pk=m.userData.pick;if(!m.parent||(pk&&pk.cond&&!pk.cond()))continue;m.getWorldPosition(_gv);_gv.y+=0.1;const dx=_gv.x-cp.x,dy=_gv.y-cp.y,dz=_gv.z-cp.z,d=Math.hypot(dx,dy,dz);if(d>L.dist||d<0.01)continue;
@@ -2276,7 +2279,9 @@ function nbTick(G,dt){if(G.tv)tvTick(dt);const cx=camera.position.x,cz=camera.po
 
 GB.push(...Object.keys(NBIO));GIN.push(...NB_IN);Object.keys(NBIO).forEach(k=>{GNAMES[k]=NBIO[k].names;});
 // opciones de la criatura de un piso (las mismas al prepararla en el viaje y al construir el piso)
-function crOptFor(sp){const B=sp.biome,out=sp.outdoor,ICEIL=NBIO[B]&&NBIO[B].ceil?NBIO[B].ceil:B==='pegajoso'?3.4:B==='biblioteca'?4.4:B==='comercial'?5.2:B==='piscinas'?3.6:3.3;return out?{maxH:B==='bosque'?8:10,biome:B}:{maxH:ICEIL-0.35,maxR:0.65,biome:B,goo:sp.goo[0],ceil:ICEIL};}
+const isGiantFloor=n=>n<0&&n%10===0;
+function crOptFor(sp){if(isGiantFloor(sp.n)){const o=crOptFor0(sp);return o.ceil?Object.assign(o,{maxH:o.ceil-0.15,maxR:1.7,giant:1}):Object.assign(o,{maxH:20,maxR:5,giant:1});}return crOptFor0(sp);}
+function crOptFor0(sp){const B=sp.biome,out=sp.outdoor,ICEIL=NBIO[B]&&NBIO[B].ceil?NBIO[B].ceil:B==='pegajoso'?3.4:B==='biblioteca'?4.4:B==='comercial'?5.2:B==='piscinas'?3.6:3.3;return out?{maxH:B==='bosque'?8:10,biome:B}:{maxH:ICEIL-0.35,maxR:0.65,biome:B,goo:sp.goo[0],ceil:ICEIL};}
 // optimización: durante el viaje se fabrica la criatura del piso de destino para dejar listas sus texturas de piel
 function prewarmFloor(n){if(n>=0||n===2)return;try{const sp=genSpec(n),C=makeCreature(sp.cseed,crOptFor(sp));disposeGeoms(C.root);}catch(e){}}
 function disposeGeoms(o){o.traverse(x=>{if(x.geometry)x.geometry.dispose();});}
@@ -2630,7 +2635,7 @@ function buildGen(n){MATC.clear();
           c.g.add(sc);c.obs.push({c:1,x:x,z:z,r:0.25,tall:true});}}}
     // objetos sueltos
     const NI=r()<0.55?1+Math.floor(r()*2):0;for(let i=0;i<NI;i++){const x=x0+2+r()*(CH-4),z=z0+2+r()*(CH-4),u=r();if(elevD(x,z)<9||!inside(x,z)||c.obs.some(o=>hitObs(o,x,z,0.6)))continue;if((B==='hotel'&&!inCorr(x,z))||(B==='comercial'&&inStore(x,z))||rockAt(x,z))continue;
-      const h=G.ground(x,z,99);if(h===null||(G.sea!=null&&h<G.sea))continue;addPick(c,lootId(u),x,h,z,'g'+n+'-'+sd+'-'+cx+','+cz+'-'+i,u*6.28);}
+      const h=G.ground(x,z,99);if(h===null||(G.sea!=null&&h<G.sea))continue;{const pm=addPick(c,lootId(u),x,h,z,'g'+n+'-'+sd+'-'+cx+','+cz+'-'+i,u*6.28);if(pm&&(hash3(cx*7+i,cz*13-i,sd+515)%1000)/1000<(G.mimicP||0))pm.userData.pick.mimic=true;}}
     // fusible y brújula
     if(sp.inf)for(const st of feNear(x0+CH/2,z0+CH/2,CH/2+1)){if(st.x<x0||st.x>=x0+CH||st.z<z0||st.z>=z0+CH)continue;const y=Math.max(0,G.ground(st.x,st.z,99)||0),top=out?99:(B==='cuevas'?4.6:ICEIL);
       const fe=feBuild({key:st.key,x:st.x,z:st.z,y:y,yaw:st.yaw,spec:feSpec(st.seed),top:top});c.g.add(fe.g);fe.obs.forEach(o=>c.obs.push(o));c.fe=fe;G.fes.push(fe);fe.inter.forEach(m=>G.inter.push(m));
@@ -3266,7 +3271,7 @@ function makeCreature(seed,opt){opt=opt||{};const seedA=seed;const r=rng(seed),p
     let total=0;for(const m of targets){if(total>2600)break;O.seed=hseed+total;total+=crHair(m,O);}}
   if(opt.ceil&&(loco==='arana'||loco==='bipedo'||loco==='cienpies')&&ch(0.12)){C.hang=true;C.parts.loco=loco+'_colgado';}
   // ---- escala final con límites ----
-  let H=Hb*K;if(opt.maxH)H=Math.min(H,opt.maxH);H=clamp(H,0.35,10);
+  let H=Hb*K;if(opt.maxH)H=Math.min(H,opt.maxH);H=clamp(H,0.35,10);if(opt.giant)H=opt.maxH;
   const baseRad=Math.max(0.35,loco==='medio'?tw*1.8:loco==='rueda'?Math.max(tw*1.4,Hb*0.25):loco==='arana'||loco==='tripode'?Hb*0.45:loco==='cuadrupedo'?Hb*0.45:loco==='reptante'||loco==='cienpies'||loco==='serpiente'?Hb*0.6:loco==='nudillos'?Hb*0.35:tw*1.4);
   let k=H/Hb;if(opt.maxR&&baseRad*k>opt.maxR)k=Math.max(0.3/Hb,opt.maxR/baseRad);H=Hb*k;
   root.scale.setScalar(k);C.k=k;C.H=H;if(C.hang){root.remove(body);const hg=new THREE.Group();hg.add(body);hg.rotation.z=Math.PI;hg.position.y=opt.ceil/k;root.add(hg);C.hanger=hg;}C.rad=Math.max(0.3,baseRad*k);C.eyeY=torsoTop*k;C.parts.altura=+H.toFixed(2);
@@ -3415,7 +3420,19 @@ function crVoice(C,vol,pan,scream){C.yell=scream?0.9:Math.max(C.yell||0,0.4);if(
 function crGroundY(G,x,z,C){C=C||G.cr;const g=G.ground(x,z,99);let y=g===null?0:g;if(G.sea!=null&&y<G.sea)y=G.sea-0.3*(C?C.H:1);return y;}
 function spawnCreature(G){const C=makeCreature(G.spec.cseed,G.crOpt);G.group.add(C.root);const r=rng(G.spec.cseed+1);
   let x=0,z=30;for(let t=0;t<40;t++){const a=r()*6.283,d=C.beh==='guia'?14+r()*6:36+r()*16;x=Math.sin(a)*d;z=Math.cos(a)*d;if(G.spec.half&&(Math.abs(x)>G.spec.half-4||Math.abs(z)>G.spec.half-4))continue;if(!G.blocked(x,z,C.rad))break;}
-  Object.assign(C,{x:x,z:z,y:0,yaw:r()*6.28,st:'idle',stT:2,tx:x,tz:z,spd:0,hitCd:0,seenT:0,met:false,dropped:0});C.y=crGroundY(G,x,z,C);C.root.position.set(x,C.y,z);return C;}
+  Object.assign(C,{x:x,z:z,y:0,yaw:r()*6.28,st:'idle',stT:2,tx:x,tz:z,spd:0,hitCd:0,seenT:0,met:false,dropped:0});C.y=crGroundY(G,x,z,C);C.root.position.set(x,C.y,z);
+  const q=rng(G.spec.cseed+2027);G.giant=!!(G.crOpt&&G.crOpt.giant);
+  if(G.giant){C.beh='colosal';C.agr=true;C.ambush=null;C.canCeil=false;C.fly=false;C.walk*=0.8;C.run=C.walk*1.3;C.parts.comportamiento='colosal';}
+  else if(C.agr&&!G.spec.outdoor&&HIDE_BIOMES.includes(G.spec.biome)&&q()<0.55){C.ambush='escondite';C.parts.emboscada='escondite';}
+  // crías: versiones pequeñas que corren alrededor y avisan cuando te ven
+  G.minions=[];if(C.agr&&!G.giant&&q()<0.4){const nM=2+(q()<0.3?1:0);for(let i=0;i<nM;i++){const M=makeCreature(G.spec.cseed,Object.assign({},G.crOpt,{maxH:0.75,maxR:0.3,noLight:true}));
+      M.canCeil=false;M.ambush=null;M.fly=false;M.minion=true;Object.assign(M,{x:x+Math.sin(i*2.1)*2,z:z+Math.cos(i*2.1)*2,y:0,yaw:0,spd:0,ang:i*2.1,cd:2+i,st:'idle'});M.y=crGroundY(G,M.x,M.z,M);M.root.position.set(M.x,M.y,M.z);G.group.add(M.root);G.minions.push(M);}}
+  // objetos falsos: solo en pisos con criatura agresiva
+  G.mimicP=C.agr?(G.giant?0.1:0.07):0;
+  let th=0;if(G.giant)th=5;else if(C.agr){th={acechador:3,cazador:3,ciego:2,luz:2}[C.beh]||2;if(C.ambush)th++;if(G.minions.length)th++;th=Math.min(5,th);}G.threat=th;
+  return C;}
+const HIDE_BIOMES=['casa','escuela','lavanderia','hotel','oficinas','hospital','bodega','biblioteca','comercial','teatro','maquinas','juegos','alreves'];
+function floorThreat(n){if(n>=0)return n===1?3:n===2?4:0;return room&&room.gen&&room.threat!=null?room.threat:0;}
 // dentro del elevador (o en su puerta) nadie puede ser atrapado ni perseguido
 const inSafeAt=(x,y,z)=>y<1.2&&Math.abs(x)<HS+0.05&&z>-HS-0.05&&z<SF+0.25,meSafe=()=>inSafeAt(P.x,P.y,P.z);
 function genTargets(){const t=[];if(S.state==='play'&&!S.hook&&!meSafe())t.push({x:P.x,y:P.y,z:P.z,me:1,lt:lampHeld()&&S.flashOn?1:0,rn:S.runNow?1:0,sd:S.crSeen?1:0,mv:S.moveAmt||0});
@@ -3434,13 +3451,27 @@ function crFace(C,x,z,dt){let dy=Math.atan2(x-C.x,z-C.z)-C.yaw;dy=Math.atan2(Mat
 /* emboscadas: desde el techo, el suelo, las paredes, el aire o de un salto; trepar y volar */
 const CR_NAMES=['El Que Cuelga','La Inquilina','El Vecino de Arriba','La Cosa del Techo','El Que Escarba','La Madre','El Saltador','El Empleado','La Visita','El Que Mira','El Hambriento','La Novia','El Portero','El Sin Cara','El Huésped'];
 function crFindWall(G,C){for(let a=0;a<8;a++){const an=a/8*6.283;for(const r of [0.8,1.3,1.8]){const x=C.x+Math.sin(an)*r,z=C.z+Math.cos(an)*r;if(G.blocked(x,z,0.05,false))return {x:x,z:z,an:an,r:r};}}return null;}
-function crAmbEnd(C,cd){C.amb=null;C.ambCd=cd+Math.random()*20;C.wall=null;C.surfTgt=C.baseSurf||0;C.burrowTgt=0;C.flyTgt=0;C.leapY=0;C.holdT=0;}
+// escondite: la criatura se mete en un mueble delante de ti y sale cuando pasas cerca; se oyen ruiditos antes
+function crHide(G,C,t,d,dt,hear,pan){
+  if(!C.hideAt){let best=null;let fx=-Math.sin(P.yaw),fz=-Math.cos(P.yaw);if(!t.me){const l=Math.hypot(t.x-C.x,t.z-C.z)||1;fx=(t.x-C.x)/l;fz=(t.z-C.z)/l;}const Qx=t.x+fx*8,Qz=t.z+fz*8;
+    // el punto de cada mueble o pared más cercano a donde vas a pasar
+    for(const ch of G.chunks.values())for(const o of ch.obs){if(o.c||o.x1==null)continue;const ox=clamp(Qx,o.x1,o.x2),oz=clamp(Qz,o.z1,o.z2),dist=Math.hypot(ox-t.x,oz-t.z);if(dist<4.5||dist>15||inSafeAt(ox,0,oz))continue;
+      const dot=((ox-t.x)*fx+(oz-t.z)*fz)/dist;if(dot<0.15)continue;const sc=Math.hypot(ox-Qx,oz-Qz)-dot*3;if(!best||sc<best.sc)best={sc,o,ox,oz};}
+    if(!best){crAmbEnd(C,6);return false;}C.hideAt={x:best.ox,z:best.oz,o:best.o,t:0,n:1};C.hidden=true;C.root.visible=false;C.x=best.ox;C.z=best.oz;C.tx=C.x;C.tz=C.z;}
+  const H=C.hideAt;H.t+=dt;C.spd=0;C.x=H.x;C.z=H.z;C.ambT=0;const dd=Math.hypot(t.x-H.x,t.z-H.z),dme=Math.hypot(P.x-H.x,P.z-H.z);
+  if(dme<9){H.n-=dt;if(H.n<=0){H.n=1.4+Math.random()*2.4;const hh=clamp(1-dme/12,0,1);if(hh>0.05){const hp=panFrom(Math.atan2(H.x-P.x,H.z-P.z));pnoise(0.16,220+Math.random()*260,0.13*hh,hp,2.5);if(Math.random()<0.4)ptone(90+Math.random()*40,0.05,0.25,0.05*hh,'sawtooth',hp);}}}
+  if(dd<2.7){const o=H.o,px=clamp(t.x,o.x1-C.rad-0.15,o.x2+C.rad+0.15),pz=clamp(t.z,o.z1-C.rad-0.15,o.z2+C.rad+0.15);C.x=px;C.z=pz;C.hidden=false;C.hideAt=null;C.root.visible=true;C.yaw=Math.atan2(t.x-C.x,t.z-C.z);
+    crVoice(C,0.4,pan,true);if(t.me)S.scareShake=Math.max(S.scareShake,0.7);C.amb='leap';C.lp={x0:C.x,z0:C.z,t:0,tx:t.x,tz:t.z,me:t.me,id:t.id,k0:0,b0:0,f0:0};return true;}
+  if(H.t>40&&dd>14){C.hideAt=null;}
+  return true;}
+function crAmbEnd(C,cd){if(C.hidden){C.hidden=false;C.hideAt=null;if(room&&room.cr===C)crRelocate(room,[],18,26,14,true);C.root.visible=true;}C.amb=null;C.ambCd=cd+Math.random()*20;C.wall=null;C.surfTgt=C.baseSurf||0;C.burrowTgt=0;C.flyTgt=0;C.leapY=0;C.holdT=0;}
 function crAmbush(G,C,TG,NT,nd,seen,dt,hear,pan){C.ambCd=Math.max(0,(C.ambCd||0)-dt);
   if(!C.amb){if(C.ambCd>0||!NT||C.st==='retreat'||S.hook||nd>26||nd<3.5)return false;if(seen&&!['techo','aire','suelo'].includes(C.ambush))return false;
     C.amb='stalk';C.ambT=0;if(C.ambush==='suelo'&&hear>0.05)pnoise(0.8,90,0.12*hear,pan,1);}
   const t=NT;C.ambT+=dt;if(!t||C.ambT>30){crAmbEnd(C,35);return false;}
   const d=Math.hypot(t.x-C.x,t.z-C.z);
   if(C.amb==='stalk'){
+    if(C.ambush==='escondite')return crHide(G,C,t,d,dt,hear,pan);
     if(C.ambush==='techo')C.surfTgt=1;else if(C.ambush==='suelo')C.burrowTgt=1;else if(C.ambush==='aire')C.flyTgt=1;
     const ready=C.ambush==='techo'?C.surfK>0.95:C.ambush==='suelo'?(C.burrow||0)>0.95:true;
     if(C.ambush==='pared'){if(!C.wall&&(d<10||(C.spd===0&&C.ambT>1.5))){const w=crFindWall(G,C);if(w)C.wall=w;}
@@ -3484,6 +3515,8 @@ function updateCreature(G,dt){const C=G.cr;if(!C)return;const host=!MP.on||MP.ho
     if(ambOn){}
     else if(!NT){C.spd=0;}
     else if(C.st==='retreat'){const ax=C.x-NT.x,az=C.z-NT.z,l=Math.hypot(ax,az)||1;crStep(G,C,C.x+ax/l*5,C.z+az/l*5,C.run*0.9,dt);if(C.stT<=0||nd>30){if(!anySeen&&crRelocate(G,TG)){}C.st='idle';C.stT=4;}}
+    else if(C.beh==='colosal'){crStep(G,C,NT.x,NT.z,anySeen?C.walk*0.7:C.run,dt);}
+    else if(C.alertT>0&&C.agr){C.alertT-=dt;crStep(G,C,C.ax,C.az,C.run*0.95,dt);if(Math.hypot(C.ax-C.x,C.az-C.z)<1.5)C.alertT=0;}
     else{const b=C.beh;
       if(b==='acechador'){if(anySeen){C.spd=0;}else{crStep(G,C,NT.x,NT.z,C.run,dt);if(C.spd>0){C.scrT=(C.scrT||0)-dt;if(C.scrT<=0){C.scrT=0.35;if(hear>0.05)pnoise(0.3,140+Math.random()*80,0.12*hear,pan,1.5);}}}}
       else if(b==='ciego'){for(const t of TG){const d=Math.hypot(t.x-C.x,t.z-C.z);if((t.rn&&d<30)||(d<2.4&&t.mv>0.1)||(t.me&&S.noiseT>0&&d<S.noiseR)){C.tx=t.x;C.tz=t.z;C.st='hunt';C.stT=7;}}
@@ -3514,6 +3547,8 @@ function updateCreature(G,dt){const C=G.cr;if(!C)return;const host=!MP.on||MP.ho
   else{const k=MP.crk;if(k){const ox=C.x,oz=C.z,f=Math.min(1,dt*8);C.x+=(k[0]-C.x)*f;C.y+=(k[1]-C.y)*f;C.z+=(k[2]-C.z)*f;let dy=k[3]-C.yaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));C.yaw+=dy*f;if(Math.hypot(k[0]-C.x,k[2]-C.z)>8){C.x=k[0];C.y=k[1];C.z=k[2];}
       animCreature(C,dt,Math.hypot(C.x-ox,C.z-oz)/Math.max(dt,0.001));}}
   if(host)C.y+=(crGroundY(G,C.x,C.z)-C.y)*Math.min(1,dt*6);C.root.position.set(C.x,C.y,C.z);C.root.rotation.y=C.yaw;
+  if(!host&&MP.crk&&MP.crk.length>=9){const hid=MP.crk[8]===1;if(hid!==!!C.hidden){C.hidden=hid;C.root.visible=!hid;}}
+  crTrails(G,C,dt);if(G.minions&&G.minions.length)minionsTick(G,C,dt,host);
   if(host)crPivot(C,dt);else if(MP.crk&&MP.crk.length>=8&&C.pivot){C.surfK=MP.crk[4];C.burrow=MP.crk[5];C.flyK=MP.crk[6];C.leapY=MP.crk[7];crPivot(C,0);}
   if(G.surfaceAt&&(C.spd>0.3||(!host&&C.root.position.distanceToSquared(P)<3600))){const sy=G.surfaceAt(C.x,C.z,C.y+1);if(sy!=null&&C.y<sy+0.3){C.wT=(C.wT||0)-dt;if(C.wT<=0){C.wT=0.35;if(C.spd>0.3||host===false)waterRipple(C.x,C.z,0.06+Math.min(0.12,C.H*0.03),sy);}}}
   if(C.head&&!C.spinHead){let a=Math.atan2(P.x-C.x,P.z-C.z)-C.yaw;a=Math.atan2(Math.sin(a),Math.cos(a));C.head.rotation.y+=((myD<30?clamp(a,-1,1):C.lookA||0)-C.head.rotation.y)*Math.min(1,dt*3);}
@@ -3523,14 +3558,43 @@ function updateCreature(G,dt){const C=G.cr;if(!C)return;const host=!MP.on||MP.ho
   // efectos sobre mí
   if(S.state==='play'){if(C.agr&&S.crHitCd<=0&&!S.hook&&!C.amb&&(C.burrow||0)<0.3&&(C.surfK||0)<0.3&&myD<C.rad+0.7&&Math.abs(P.y-C.y)<2.5&&!meSafe())crHitMe(G);
     if(C.beh==='observador'&&S.crSeen&&myD<32)S.san=Math.max(0,S.san-dt/80);
+    if(C.beh==='colosal'){if(!G.giantTold){G.giantTold=true;toast('Algo enorme vive en este piso. No lo mires directamente.');}if(S.crSeen&&myD<80&&!meSafe()){S.san=Math.max(0,S.san-dt/14);S.scareShake=Math.max(S.scareShake,0.22);G.gwT=(G.gwT||0)-dt;if(G.gwT<=0){G.gwT=2.5+Math.random()*2;pnoise(1.2,180,0.07,pan,0.6);}}}
     if(C.beh==='imitador'&&myD<12)S.san=Math.max(0,S.san-dt/420);
     if(C.beh==='guia'&&myD<7){S.san=Math.min(1,S.san+dt/220);if(!G.guideTold){G.guideTold=true;toast('Parece que quiere que lo sigas…');}}
     if(C.agr&&myD<9&&C.spd>C.walk*1.2)S.san=Math.max(0,S.san-dt/120);}}
+// rastros: huellas o baba en el suelo por donde pasa la criatura (duran 2 minutos)
+let TRAIL_M=null;
+function trailMats(){if(TRAIL_M)return TRAIL_M;const mkT=(fn)=>{const c=mk(128,128),g=c.getContext('2d');fn(g);const t=new THREE.CanvasTexture(c);KEEP.add(t);return t;};
+  const pr=mkT(g=>{g.fillStyle='rgba(20,14,10,.85)';g.beginPath();g.ellipse(64,80,22,28,0,0,7);g.fill();[[-26,34,-0.5],[0,24,0],[26,34,0.5]].forEach(([dx,dy,a])=>{g.save();g.translate(64+dx,dy+30);g.rotate(a);g.beginPath();g.ellipse(0,0,8,14,0,0,7);g.fill();g.fillRect(-2,-30,4,18);g.restore();});});
+  const go=mkT(g=>{const R=Math.random;g.fillStyle='rgba(255,255,255,.9)';g.beginPath();g.arc(64,64,30,0,7);g.fill();for(let i=0;i<9;i++){g.beginPath();g.arc(64+(R()-0.5)*80,64+(R()-0.5)*80,6+R()*12,0,7);g.fill();}});
+  const base={transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2};
+  TRAIL_M={print:new THREE.MeshBasicMaterial(Object.assign({map:pr,opacity:0.8},base)),goo:new THREE.MeshBasicMaterial(Object.assign({map:go,opacity:0.7,color:0x6f9a22},base)),geo:new THREE.PlaneGeometry(1,1).rotateX(-Math.PI/2)};return TRAIL_M;}
+function crTrails(G,C,dt){G.trails=G.trails||[];if(G.trails.length&&S.t-G.trails[0].t>120){const o=G.trails.shift();if(o.m.parent)o.m.parent.remove(o.m);}
+  if(C.hidden||(C.surfK||0)>0.3||(C.burrow||0)>0.3||(C.flyK||0)>0.3||C.leapY>0.05){C.lx=C.x;C.lz=C.z;return;}
+  const mv=Math.hypot(C.x-(C.lx==null?C.x:C.lx),C.z-(C.lz==null?C.z:C.lz));C.lx=C.x;C.lz=C.z;C.trD=(C.trD||0)+Math.min(mv,1);const step=Math.max(0.85,C.rad*1.5);if(C.trD<step)return;C.trD=0;
+  if(G.surfaceAt){const sy=G.surfaceAt(C.x,C.z,C.y+1);if(sy!=null&&sy>C.y+0.05)return;}
+  const T=trailMats(),goo=!!(C.goo||(C.parts&&C.parts.textura==='goo')),side=(C.trS=-(C.trS||1)),sx=Math.cos(C.yaw)*side*C.rad*0.35,sz=-Math.sin(C.yaw)*side*C.rad*0.35;
+  const m=new THREE.Mesh(T.geo,goo?T.goo:T.print),sc=goo?Math.max(0.45,C.rad*1.1):Math.max(0.28,C.rad*0.55);m.scale.set(sc,1,sc*(goo?1:1.3));m.rotation.y=C.yaw+(goo?Math.random()*6:0);
+  if(goo&&G.spec.goo)T.goo.color.setHex(G.spec.goo[0]);m.position.set(C.x+(goo?0:sx),C.y+0.02,C.z+(goo?0:sz));m.renderOrder=1;G.group.add(m);G.trails.push({m,t:S.t});
+  if(G.trails.length>70){const o=G.trails.shift();if(o.m.parent)o.m.parent.remove(o.m);}}
+// crías: siguen a la grande y le avisan con chillidos cuando ven a alguien
+function minionsTick(G,C,dt,host){const far=60*60;
+  if(host){const TG=genTargets();for(const M of G.minions){M.ang+=dt*(0.5+0.2*Math.sin(M.ang));M.cd-=dt;const r0=2.4+Math.sin(S.t*0.7+M.ang)*0.9,tx=C.x+Math.sin(M.ang)*r0,tz=C.z+Math.cos(M.ang)*r0;
+      if(Math.hypot(M.x-C.x,M.z-C.z)>25){M.x=tx;M.z=tz;}crStep(G,M,tx,tz,Math.max(M.run*0.8,C.spd*1.2),dt);M.y+=(crGroundY(G,M.x,M.z,M)-M.y)*Math.min(1,dt*8);
+      if(M.cd<=0&&C.agr){for(const t of TG){if(Math.hypot(t.x-M.x,t.z-M.z)<13&&G.los(M.x,M.z,t.x,t.z)){M.cd=7;C.alertT=7;C.ax=t.x;C.az=t.z;const hm=clamp(1-Math.hypot(M.x-P.x,M.z-P.z)/30,0,1),pn=panFrom(Math.atan2(M.x-P.x,M.z-P.z));if(hm>0.05){[0,0.12,0.24].forEach(dl=>ptone(1500+Math.random()*900,dl,0.08,0.06*hm,'square',pn));}break;}}}}}
+  else if(MP.cm){G.minions.forEach((M,i)=>{const k=MP.cm[i];if(!k)return;const ox=M.x,oz=M.z,f=Math.min(1,dt*8);M.x+=(k[0]-M.x)*f;M.z+=(k[1]-M.z)*f;M.yaw=k[2];M.spd=Math.hypot(M.x-ox,M.z-oz)/Math.max(dt,0.001);M.y=crGroundY(G,M.x,M.z,M);});}
+  for(const M of G.minions){const near=(M.x-P.x)**2+(M.z-P.z)**2<far;M.root.visible=near&&!C.hidden;if(!near)continue;animCreature(M,dt,M.spd||0);M.root.position.set(M.x,M.y,M.z);M.root.rotation.y=M.yaw||0;}}
 function crWander(G,C,dt){if(C.stT<=0||Math.hypot(C.tx-C.x,C.tz-C.z)<1){C.stT=3+Math.random()*5;const a=Math.random()*6.283,d=6+Math.random()*12;C.tx=C.x+Math.sin(a)*d;C.tz=C.z+Math.cos(a)*d;
     // en mapas infinitos deambula alrededor de ti en vez de irse lejos
     const NT=G.crNT;if(G.spec.inf&&NT&&Math.hypot(NT.x-C.x,NT.z-C.z)>14){const b=Math.random()*6.283,e=5+Math.random()*9;C.tx=NT.x+Math.sin(b)*e;C.tz=NT.z+Math.cos(b)*e;}
     if(G.spec.half){C.tx=clamp(C.tx,-G.spec.half+5,G.spec.half-5);C.tz=clamp(C.tz,-G.spec.half+5,G.spec.half-5);}}
   if(C.st==='pause'){C.spd=0;return;}crStep(G,C,C.tx,C.tz,C.walk,dt);}
+// un objeto que en realidad es una criatura: al intentar recogerlo te salta encima
+function mimicSpring(h){const G=room,pk=h.userData.pick;S.taken[pk.key]=1;const wp=new THREE.Vector3();h.getWorldPosition(wp);if(h.parent)h.parent.remove(h);const pi=G.picks.indexOf(h);if(pi>=0)G.picks.splice(pi,1);for(const c of G.chunks.values()){const ci=c.picks.indexOf(h);if(ci>=0)c.picks.splice(ci,1);}disposeGroup(h);S.hover=null;mpEmit('tk',pk.key);if(MP.host)mpTk(pk.key);
+  const M=makeCreature(hash3(G.spec.cseed,pk.key.length*31+Math.floor(wp.x*7),Math.floor(wp.z*7)),{maxH:1.15,maxR:0.45,noLight:true,biome:G.spec.biome});M.mimic=true;M.canCeil=false;M.ambush=null;
+  Object.assign(M,{x:wp.x,z:wp.z,y:crGroundY(G,wp.x,wp.z),yaw:Math.atan2(P.x-wp.x,P.z-wp.z),st:'idle',stT:2,tx:wp.x,tz:wp.z,spd:0,hitCd:0});M.root.position.set(M.x,M.y,M.z);M.root.rotation.y=M.yaw;G.group.add(M.root);
+  crVoice(M,0.45,0,true);noiseBurst(0.5,600,0.2);S.scareShake=1;toast('¡No era '+ITEMS[pk.id].name.toLowerCase()+'!');hookStartC(G,M);if(!S.hook)mimicGone(M,0);}
+function mimicGone(M,delay){setTimeout(()=>{if(M.root.parent){M.root.parent.remove(M.root);disposeGroup(M.root);}},delay==null?900:delay);}
 function crDrop(G,id,x,z,key){if(S.taken[key]||!G.gen)return;const h=G.ground(x,z,99)||0,m=makeItemMesh(id);m.position.set(x,Math.max(h,G.sea!=null?G.sea:-99),z);m.userData.pick={id:id,key:key};m.traverse(o=>{o.userData.root=m;});G.group.add(m);G.picks.push(m);noiseBurst(0.2,900,0.05);}
 
 /* ---------- Nivel 2: el salón de madera y el ojo del cuadro ---------- */
@@ -3858,6 +3922,7 @@ function hookTap(){const h=S.hook;if(!h||S.state!=='play')return;h.p+=0.065;S.sc
   noiseBurst(0.06,500+Math.random()*400,0.05);if(h.p>=1)hookWin();else hookBar();}
 const _hkT=new THREE.Vector3(),_hkH=new THREE.Vector3();
 function hookTick(dt){const h=S.hook,C=h.C,fe=h.fe;if(!fe&&meSafe()){hookSafe();return;}h.t+=dt;if(h.helpT>0)h.helpT-=dt;h.p-=dt*(0.17+h.t*0.012);hookBar();let head;
+  if(C&&C.mimic)animCreature(C,dt,0.9);
   if(fe){animCreature(C,dt,0.9);fe.g.updateMatrixWorld();
   // te jala hacia el fondo del elevador
   const tgt=fe.g.localToWorld(_hkT.set(0,0,-0.2));const k=Math.min(1,dt*0.35);P.x+=(tgt.x-P.x)*k;P.z+=(tgt.z-P.z)*k;
@@ -3870,10 +3935,10 @@ function hookTick(dt){const h=S.hook,C=h.C,fe=h.fe;if(!fe&&meSafe()){hookSafe();
   S.san=Math.max(0,S.san-dt*0.02);
   if(h.p<=0||h.t>=7.5)hookLose();}
 // si te atrapan pero llegas al elevador, la criatura te suelta y se va lejos, fuera de tu vista
-function hookSafe(){const h=S.hook;S.hook=null;$('#hook').hidden=true;const C=h.C,G=h.G;S.crHitCd=8;if(C){crAmbEnd(C,45);C.st='idle';C.stT=4;C.hitCd=9;C.surfTgt=C.baseSurf||0;C.burrowTgt=0;C.flyTgt=0;C.leapY=0;if(G&&G.cr===C&&(!MP.on||MP.host)){if(crRelocate(G,[],18,26,14,true)){C.tx=C.x;C.tz=C.z;C.root.position.set(C.x,C.y,C.z);}}}toast('Estás a salvo dentro del elevador');}
+function hookSafe(){const h=S.hook;S.hook=null;$('#hook').hidden=true;const C=h.C,G=h.G;if(C&&C.mimic){mimicGone(C,0);toast('Estás a salvo dentro del elevador');return;}S.crHitCd=8;if(C){crAmbEnd(C,45);C.st='idle';C.stT=4;C.hitCd=9;C.surfTgt=C.baseSurf||0;C.burrowTgt=0;C.flyTgt=0;C.leapY=0;if(G&&G.cr===C&&(!MP.on||MP.host)){if(crRelocate(G,[],18,26,14,true)){C.tx=C.x;C.tz=C.z;C.root.position.set(C.x,C.y,C.z);}}}toast('Estás a salvo dentro del elevador');}
 function hookWin(){const h=S.hook;S.hook=null;$('#hook').hidden=true;const fe=h.fe;
   if(!fe){const C=h.C,G=h.G,dx=P.x-C.x,dz=P.z-C.z,dl=Math.hypot(dx,dz)||1;for(let r2=2.4;r2>0.4;r2-=0.4){const nx=P.x+dx/dl*r2,nz=P.z+dz/dl*r2;if(canBe(nx,nz)){P.x=nx;P.z=nz;break;}}
-    C.st='retreat';C.stT=7;C.hitCd=9;S.crHitCd=6;crAmbEnd(C,55);noiseBurst(0.5,250,0.25);tone(70,0,0.4,0.2,'square');S.scareShake=1;crVoice(C,0.25,0,true);toast('¡Te soltaste! Corre');return;}
+    C.st='retreat';C.stT=7;C.hitCd=9;S.crHitCd=6;crAmbEnd(C,55);if(C.mimic){mimicGone(C);}noiseBurst(0.5,250,0.25);tone(70,0,0.4,0.2,'square');S.scareShake=1;crVoice(C,0.25,0,true);toast('¡Te soltaste! Corre');return;}
   feMark(fe,'dead');
   const out=fe.g.localToWorld(new THREE.Vector3(0,0,fe.W+1.1));P.x=out.x;P.z=out.z;P.yaw=fe.yaw;P.pitch=0;
   fe.door=0;fe.sync();feDoorPose(fe);h.C.root.visible=false;noiseBurst(0.5,250,0.25);tone(70,0,0.4,0.2,'square');S.scareShake=1;toast('¡Te soltaste! Ese elevador ya no sirve');}
@@ -4037,7 +4102,8 @@ function motorStop(){if(!A.motor)return;const m=A.motor,t=A.ctx.currentTime;m.g.
 let toastT=0;
 function toast(msg){const el=$('#toast');el.textContent=msg;el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('on'),1900);}
 let cardT=0;
-function card(n){$('#cardTitle').textContent='PISO '+n;$('#cardSub').textContent=n<0?'Nivel '+n+' · '+genSpec(n).name+(genSpec(n).var?' · '+VAR_NAMES[genSpec(n).var]:''):n===2?'Nivel 2 · El cuadro':n===0?'Nivel 0':n===1?'Nivel 1 · Las piscinas':'Nivel sin construir';const c=$('#card');c.classList.add('on');clearTimeout(cardT);cardT=setTimeout(()=>c.classList.remove('on'),2400);}
+function card(n){$('#cardTitle').textContent='PISO '+n;$('#cardSub').textContent=n<0?'Nivel '+n+' · '+genSpec(n).name+(genSpec(n).var?' · '+VAR_NAMES[genSpec(n).var]:''):n===2?'Nivel 2 · El cuadro':n===0?'Nivel 0':n===1?'Nivel 1 · Las piscinas':'Nivel sin construir';{const th=floorThreat(n),cols=['#8fd48a','#d8d27a','#e8b04a','#e8803a','#e8503a','#ff2a2a'],lab=['PASIVO','BAJA','MODERADA','ALTA','MUY ALTA','EXTREMA'],el=$('#cardThreat');el.innerHTML='AMENAZA <i>'+'■'.repeat(th)+'□'.repeat(5-th)+'</i> '+th+'/5 · '+lab[th];el.style.color=cols[th];el.style.textShadow=th>=4?'0 0 12px rgba(255,40,30,.6)':'none';}
+  const c=$('#card');c.classList.add('on');clearTimeout(cardT);cardT=setTimeout(()=>c.classList.remove('on'),2400);}
 function press(btn){
   const dir=btn.userData.dir;
   if(noPower()){tone(90,0,.15,.12,'square');toast('El elevador se quedó sin energía');return;}
@@ -4164,7 +4230,7 @@ function interact(){if(S.state!=='play'||modal()||S.hook)return;if(S.scope){exit
   if(h.userData.pick&&h.userData.pick.cond&&!h.userData.pick.cond())return;
   if(h.userData.pick){pickUp(h);return;}
   press(h);}
-function pickUp(h){{const pk=h.userData.pick;
+function pickUp(h){{const pk=h.userData.pick;if(pk.mimic&&room&&room.gen){mimicSpring(h);return;}
     if(!addItem(pk.id)){toast('Tu mochila está llena');return;}
     S.taken[pk.key]=1;if(h.parent)h.parent.remove(h);const pi=room.picks.indexOf(h);if(pi>=0)room.picks.splice(pi,1);for(const c of (room.chunks?room.chunks.values():[])){const ci=c.picks.indexOf(h);if(ci>=0)c.picks.splice(ci,1);}disposeGroup(h);S.hover=null;
     tone(660,0,.08,.07,'triangle');tone(990,.07,.12,.06,'triangle');showHeld('Recogiste: '+ITEMS[pk.id].name);mpEmit('tk',pk.key);if(MP.host)mpTk(pk.key);}}
@@ -4532,7 +4598,7 @@ const clN=(v,a,b,d)=>{v=+v;return Number.isFinite(v)?Math.min(b,Math.max(a,v)):d
 const safeName=n=>String(n==null?'':n).replace(/[\u0000-\u001f\u007f<>]/g,'').trim().slice(0,14)||'Jugador';
 function mpWorld(){const D=room&&room.lvl1&&room.duck;
   return {sd:S.seed,e:{f:S.floor,t:S.target,s:S.elev,k:S.tripK||0,md:r2(S.mdFix||3),d:S.dir||0,fe:S.elev==='fe'?(S.feKey||''):''},pw:S.power1?1:0,gr:S.grateOpen?1:0,
-    dk:D?[r2(D.x),r2(D.y),r2(D.z),r2(D.yaw),D.moving?1:0]:null,fz:Object.keys(S.fuses||{}).map(Number),p2:S.power2?1:0,cr:(room&&room.gen&&room.cr)?[r2(room.cr.x),r2(room.cr.y),r2(room.cr.z),r2(room.cr.yaw),r2(room.cr.surfK||0),r2(room.cr.burrow||0),r2(room.cr.flyK||0),r2(room.cr.leapY||0)]:null,tk:MP.tk.slice(-MP.cap),dl:MP.dl.slice(-Math.round(MP.cap*0.6)),ch:chestEnc()};}
+    dk:D?[r2(D.x),r2(D.y),r2(D.z),r2(D.yaw),D.moving?1:0]:null,fz:Object.keys(S.fuses||{}).map(Number),p2:S.power2?1:0,cr:(room&&room.gen&&room.cr)?[r2(room.cr.x),r2(room.cr.y),r2(room.cr.z),r2(room.cr.yaw),r2(room.cr.surfK||0),r2(room.cr.burrow||0),r2(room.cr.flyK||0),r2(room.cr.leapY||0),room.cr.hidden?1:0]:null,cm:(room&&room.gen&&room.minions&&room.minions.length)?room.minions.map(M=>[r2(M.x),r2(M.z),r2(M.yaw||0)]):null,tk:MP.tk.slice(-MP.cap),dl:MP.dl.slice(-Math.round(MP.cap*0.6)),ch:chestEnc()};}
 function mpSend(dt){MP.sendT-=dt;if(MP.sendT>0)return;MP.sendT=1/12;
   const st=(S.state==='play'||S.state==='pause')?'play':S.state==='spec'?'spec':S.state==='dead'?'dead':'menu';
   const D=room&&room.lvl1&&room.duck;
@@ -4580,7 +4646,7 @@ function mpApplyWorld(w){if(!w||typeof w!=='object')return;
         if(e.s==='fe'&&typeof e.fe==='string'){S.elev='fe';S.feKey=e.fe;feBegin(e.fe);}else{S.elev='closing';S.doorTarget=0;noiseBurst(1.2,700,.08);}coopTripCheck();}}
     if(S.elev==='idle'&&e.s==='idle'&&e.f!==S.floor){if(!MP.mismAt)MP.mismAt=Date.now();}else MP.mismAt=0;
     if(MP.mismAt&&Date.now()-MP.mismAt>1500){MP.mismAt=0;mpGoFloor(e.f);}}
-  MP.dk=Array.isArray(w.dk)?w.dk:null;MP.crk=Array.isArray(w.cr)&&w.cr.length>=4?w.cr.map(Number):null;
+  MP.dk=Array.isArray(w.dk)?w.dk:null;MP.crk=Array.isArray(w.cr)&&w.cr.length>=4?w.cr.map(Number):null;MP.cm=Array.isArray(w.cm)?w.cm:null;
   if(w.p2&&!S.power2)S.power2=true;
   if(Array.isArray(w.fz)){S.fuses=S.fuses||{};for(const f of w.fz)if(!S.fuses[f|0])S.fuses[f|0]=1;}}
 function mpGoFloor(f){S.floor=f;S.target=f;S.lastDisp='';buildRoom(f);$('#floorTag').textContent='PISO '+f;
