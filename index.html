@@ -1068,43 +1068,103 @@ function badgeDraw(c,name){const g=c.getContext('2d');g.fillStyle='#f2f0e8';g.fi
   const n=(name||'JUGADOR').toUpperCase();let fs=40;g.fillStyle='#111';do{g.font='700 '+fs+'px "IBM Plex Mono", monospace';fs-=2;}while(g.measureText(n).width>172&&fs>14);
   g.fillText(n,78,82);g.font='500 14px "IBM Plex Mono", monospace';g.fillStyle='#555';g.fillText('ACCESO: TODAS LAS ÁREAS',78,108);
   for(let x=14;x<242;x+=3){const w=(Math.sin(x*12.9+n.length)*0.5+0.5)>0.5?2:1;g.fillStyle='#111';g.fillRect(x,128,w,22);}}
+// texturas del traje: tela con trama, costuras, arrugas y algo de mugre; goma con grano; cinta reflectante
+var SUIT_TX;
+function suitTex(){if(SUIT_TX)return SUIT_TX;const R=rng(9177);
+  const fab=mk(512,512),g=fab.getContext('2d'),bm=mk(512,512),h=bm.getContext('2d');
+  g.fillStyle='#e0b91e';g.fillRect(0,0,512,512);h.fillStyle='#808080';h.fillRect(0,0,512,512);
+  // trama de la tela
+  for(let y=0;y<512;y+=3){g.fillStyle='rgba(120,90,0,'+(0.05+R()*0.04)+')';g.fillRect(0,y,512,1);h.fillStyle='rgba(40,40,40,.18)';h.fillRect(0,y,512,1);}
+  for(let x=0;x<512;x+=3){g.fillStyle='rgba(255,240,150,'+(0.04+R()*0.03)+')';g.fillRect(x,0,1,512);h.fillStyle='rgba(200,200,200,.12)';h.fillRect(x,0,1,512);}
+  // arrugas suaves en diagonal
+  for(let i=0;i<34;i++){const x=R()*512,y=R()*512,l=60+R()*140,a=-0.5+R()*1.0+(R()<0.5?Math.PI/2:0),w=8+R()*12;g.save();g.translate(x,y);g.rotate(a);const gr=g.createLinearGradient(0,-w,0,w);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(0.5,'rgba(110,80,0,'+(0.07+R()*0.07)+')');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(-l/2,-w,l,w*2);
+    g.restore();h.save();h.translate(x,y);h.rotate(a);const hg=h.createLinearGradient(0,-w,0,w);hg.addColorStop(0,'rgba(128,128,128,0)');hg.addColorStop(0.35,'rgba(180,180,180,.22)');hg.addColorStop(0.65,'rgba(70,70,70,.22)');hg.addColorStop(1,'rgba(128,128,128,0)');h.fillStyle=hg;h.fillRect(-l/2,-w,l,w*2);h.restore();}
+  // costuras con puntadas
+  [[0,128],[0,384]].forEach(([_,y])=>{g.fillStyle='rgba(110,80,0,.45)';g.fillRect(0,y,512,3);h.fillStyle='rgba(20,20,20,.6)';h.fillRect(0,y,512,3);for(let x=0;x<512;x+=9){g.fillStyle='rgba(60,45,10,.6)';g.fillRect(x,y-5,5,1.5);g.fillRect(x,y+6,5,1.5);}});
+  for(let x=96;x<512;x+=256){g.fillStyle='rgba(110,80,0,.4)';g.fillRect(x,0,3,512);h.fillStyle='rgba(20,20,20,.55)';h.fillRect(x,0,3,512);for(let y=0;y<512;y+=9){g.fillStyle='rgba(60,45,10,.55)';g.fillRect(x-5,y,1.5,5);g.fillRect(x+6,y,1.5,5);}}
+  // manchas de mugre y desgaste
+  for(let i=0;i<26;i++){const x=R()*512,y=R()*512,r=8+R()*40,gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,'rgba(70,55,20,'+(0.08+R()*0.16)+')');gr.addColorStop(1,'rgba(70,55,20,0)');g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2);}
+  noise(g,512,512,14);noise(h,512,512,22);
+  // goma: grano fino
+  const rb=mk(256,256),rg=rb.getContext('2d');rg.fillStyle='#232326';rg.fillRect(0,0,256,256);for(let i=0;i<2200;i++){rg.fillStyle='rgba('+(R()<0.5?'60,60,66':'10,10,12')+','+(0.25+R()*0.3)+')';rg.fillRect(R()*256,R()*256,1+R()*2,1+R()*2);}noise(rg,256,256,10);
+  // suela con relieve
+  const so=mk(256,256),sg=so.getContext('2d');sg.fillStyle='#1a1a1c';sg.fillRect(0,0,256,256);sg.strokeStyle='#3a3a3e';sg.lineWidth=7;for(let y=-256;y<512;y+=26){sg.beginPath();sg.moveTo(0,y);sg.lineTo(128,y+30);sg.lineTo(256,y);sg.stroke();}
+  // cinta reflectante: plateada en medio, bordes oscuros
+  const tp=mk(256,64),tg=tp.getContext('2d');tg.fillStyle='#1a1a1c';tg.fillRect(0,0,256,64);const sv=tg.createLinearGradient(0,18,0,46);sv.addColorStop(0,'#8a8e92');sv.addColorStop(0.5,'#e8ecef');sv.addColorStop(1,'#8a8e92');tg.fillStyle=sv;tg.fillRect(0,20,256,24);for(let x=0;x<256;x+=4){tg.fillStyle='rgba(255,255,255,'+(R()*0.25)+')';tg.fillRect(x,20,2,24);}
+  // parche de peligro para la espalda
+  const pa=mk(256,256),pg=pa.getContext('2d');pg.fillStyle='#1d1d20';pg.fillRect(0,0,256,256);pg.fillStyle='#e8c21a';pg.beginPath();pg.moveTo(128,30);pg.lineTo(230,200);pg.lineTo(26,200);pg.closePath();pg.fill();pg.fillStyle='#111';pg.beginPath();pg.moveTo(128,62);pg.lineTo(204,186);pg.lineTo(52,186);pg.closePath();pg.fill();
+  pg.fillStyle='#e8c21a';pg.fillRect(120,96,16,56);pg.beginPath();pg.arc(128,168,9,0,7);pg.fill();pg.font='bold 30px "IBM Plex Mono",monospace';pg.textAlign='center';pg.fillText('NIVEL 0',128,240);
+  const T=(c,rx,ry)=>{const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rx||1,ry||1);t.anisotropy=4;KEEP.add(t);return t;};
+  SUIT_TX={fab:T(fab,2,2),fabB:T(bm,2,2),rub:T(rb,2,2),sole:T(so,1,1),tape:T(tp,3,1),patch:T(pa)};return SUIT_TX;}
+// cápsula hecha con un torno: sin cortes entre pieza y pieza
+function capsuleGeo(r1,r2,len,seg){const pts=[],N=8;for(let i=0;i<=N;i++){const a=-Math.PI/2+i/N*Math.PI/2;pts.push(new THREE.Vector2(Math.cos(a)*r2,-len+Math.sin(a)*r2));}
+  for(let i=0;i<=N;i++){const a=i/N*Math.PI/2;pts.push(new THREE.Vector2(Math.cos(a)*r1,Math.sin(a)*r1));}pts[0].x=0.0001;pts[pts.length-1].x=0.0001;return new THREE.LatheGeometry(pts,seg||18);}
+function latheGeo(prof,seg){return new THREE.LatheGeometry(prof.map(([r,y])=>new THREE.Vector2(Math.max(0.0001,r),y)),seg||24);}
 function makePlayer(name){
-  const root=new THREE.Group(),P2={};
-  const suit=new THREE.MeshPhongMaterial({color:0xe5bf1c,shininess:45,specular:0x3a3010}),tape=new THREE.MeshPhongMaterial({color:0x18181a,shininess:25}),
-    rubber=new THREE.MeshPhongMaterial({color:0x1d1d20,shininess:12}),visor=new THREE.MeshPhongMaterial({color:0x030304,shininess:180,specular:0xb8c0cc}),
-    zip=new THREE.MeshPhongMaterial({color:0x6b6b6b,shininess:60});
+  const root=new THREE.Group(),P2={},TX=suitTex();
+  const suit=new THREE.MeshPhongMaterial({color:0xffffff,map:TX.fab,bumpMap:TX.fabB,bumpScale:0.005,shininess:38,specular:0x3a3010}),
+    tape=new THREE.MeshPhongMaterial({map:TX.tape,shininess:90,specular:0x9a9a9a}),
+    rubber=new THREE.MeshPhongMaterial({color:0xffffff,map:TX.rub,bumpMap:TX.rub,bumpScale:0.006,shininess:16,specular:0x202020}),
+    sole=new THREE.MeshPhongMaterial({map:TX.sole,bumpMap:TX.sole,bumpScale:0.01,shininess:8}),
+    visor=new THREE.MeshPhongMaterial({color:0x050608,shininess:200,specular:0xc8d0dc,transparent:true,opacity:0.94}),
+    metal=new THREE.MeshPhongMaterial({color:0x8a8a8a,shininess:90,specular:0x9a9a9a});
   const ell=(r,sx,sy,sz,m,x,y,z)=>{const o=new THREE.Mesh(new THREE.SphereGeometry(r,24,16),m);o.scale.set(sx,sy,sz);o.position.set(x,y,z);return o;};
-  const cyl=(r1,r2,h,m,seg)=>new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,seg||16),m);
-  // piernas con rodilla
+  const at=(o,x,y,z)=>{o.position.set(x,y,z);return o;};
+  const ring=(r,t,m,y,sz)=>{const o=new THREE.Mesh(new THREE.TorusGeometry(r,t,8,28),m);o.rotation.x=Math.PI/2;o.position.y=y;if(sz)o.scale.y=sz;return o;};
+  // piernas: muslo y espinilla como cápsulas que se funden en la rodilla
   P2.legs=[-1,1].map(sd=>{const hip=new THREE.Group();hip.position.set(sd*0.105,0.93,0);root.add(hip);
-    const th=cyl(0.1,0.09,0.43,suit);th.position.y=-0.215;hip.add(th);
-    const knee=new THREE.Group();knee.position.y=-0.43;hip.add(knee);knee.add(ell(0.095,1,0.85,1.05,suit,0,0,0.005));
-    const sh=cyl(0.09,0.086,0.4,suit);sh.position.y=-0.2;knee.add(sh);
-    const band=cyl(0.09,0.09,0.055,tape);band.position.y=-0.35;knee.add(band);
-    const boot=new THREE.Mesh(new THREE.BoxGeometry(0.135,0.12,0.27),rubber);boot.position.set(0,-0.44,0.045);knee.add(boot);
-    knee.add(ell(0.068,1,0.85,1,rubber,0,-0.445,0.17));hip.userData.knee=knee;return hip;});
-  // parte superior (gira y baja como un bloque desde la cadera)
+    hip.add(new THREE.Mesh(capsuleGeo(0.104,0.092,0.43),suit));
+    const knee=new THREE.Group();knee.position.y=-0.43;hip.add(knee);
+    knee.add(new THREE.Mesh(capsuleGeo(0.093,0.084,0.36),suit));
+    knee.add(ell(0.07,1.1,1.05,0.55,rubber,0,-0.02,0.07));// rodillera
+    [-0.12,-0.2].forEach(y=>knee.add(ring(0.087,0.008,suit,y)));// arrugas del pantalón sobre la bota
+    knee.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.089,0.089,0.05,20,1,true),tape),0,-0.27,0));
+    // bota de goma: caña, empeine redondeado y suela con relieve
+    const boot=new THREE.Group();boot.position.y=-0.36;knee.add(boot);
+    boot.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.095,0.092,0.13,20),rubber),0,-0.02,0));boot.add(ring(0.094,0.01,rubber,0.045));
+    boot.add(ell(0.085,0.95,0.62,1.75,rubber,0,-0.07,0.05));
+    const so=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.025,0.3),sole);so.position.set(0,-0.115,0.05);boot.add(so);
+    boot.add(ell(0.075,1,0.45,0.6,sole,0,-0.105,0.19));
+    hip.userData.knee=knee;return hip;});
+  // tronco de una sola pieza: cadera, cintura, pecho, hombros y cuello
   const upper=new THREE.Group();upper.position.y=0.93;root.add(upper);const U=new THREE.Group();U.position.y=-0.93;upper.add(U);P2.upper=upper;
-  const torso=cyl(0.205,0.19,0.62,suit,20);torso.scale.z=0.74;torso.position.y=1.17;U.add(torso);
-  U.add(ell(0.21,1,0.45,0.76,suit,0,0.9,0));P2.shoulders=ell(0.235,1,0.42,0.74,suit,0,1.46,0);U.add(P2.shoulders);
-  const zp=new THREE.Mesh(new THREE.BoxGeometry(0.014,0.56,0.012),zip);zp.position.set(0,1.18,0.143);U.add(zp);
-  const belt=cyl(0.198,0.198,0.05,tape,20);belt.scale.z=0.75;belt.position.y=0.95;U.add(belt);
-  P2.arms=[-1,1].map(sd=>{const sh=new THREE.Group();sh.position.set(sd*0.27,1.43,0);sh.rotation.z=sd*0.09;U.add(sh);
-    const up=cyl(0.075,0.064,0.64,suit);up.position.y=-0.32;sh.add(up);sh.add(ell(0.08,1,0.9,1,suit,0,0,0));
-    const band=cyl(0.066,0.066,0.05,tape);band.position.y=-0.62;sh.add(band);
-    sh.add(ell(0.058,1,1.35,0.85,rubber,0,-0.7,0.005));return sh;});
+  const torso=new THREE.Mesh(latheGeo([[0,0.8],[0.12,0.81],[0.19,0.86],[0.205,0.93],[0.197,1.02],[0.192,1.1],[0.2,1.2],[0.215,1.3],[0.232,1.38],[0.228,1.44],[0.19,1.49],[0.14,1.52],[0.108,1.545],[0.104,1.6]],28),suit);torso.scale.z=0.74;U.add(torso);
+  P2.shoulders=new THREE.Group();U.add(P2.shoulders);
+  U.add(ring(0.2,0.016,tape,0.95,0.74));// cinturón
+  {const bk=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.042,0.02),metal);bk.position.set(0,0.95,0.15);U.add(bk);}
+  // cierre con jalador, solapa y bolsillo del pecho
+  {const z=new THREE.Mesh(new THREE.BoxGeometry(0.03,0.5,0.012),suit);z.position.set(0,1.2,0.146);U.add(z);const zt=new THREE.Mesh(new THREE.BoxGeometry(0.008,0.48,0.006),metal);zt.position.set(0,1.2,0.153);U.add(zt);
+    const pull=new THREE.Mesh(new THREE.BoxGeometry(0.018,0.04,0.006),metal);pull.position.set(0,1.43,0.156);U.add(pull);
+    const pk=new THREE.Mesh(new THREE.BoxGeometry(0.11,0.09,0.02),suit);pk.position.set(-0.1,1.29,0.138);pk.rotation.y=-0.25;U.add(pk);const fl=new THREE.Mesh(new THREE.BoxGeometry(0.115,0.03,0.024),suit);fl.position.set(-0.1,1.33,0.141);fl.rotation.y=-0.25;U.add(fl);}
+  // parche de peligro en la espalda y cinta en el pecho
+  {const pa=new THREE.Mesh(new THREE.PlaneGeometry(0.17,0.17),new THREE.MeshPhongMaterial({map:TX.patch,shininess:10}));pa.position.set(0,1.24,-0.171);pa.rotation.y=Math.PI;U.add(pa);}
+  // brazos: hombro a muñeca en una cápsula, con arrugas en el codo, puño, cinta y guante
+  P2.arms=[-1,1].map(sd=>{const sh=new THREE.Group();sh.position.set(sd*0.24,1.41,0);sh.rotation.z=sd*0.1;U.add(sh);
+    sh.add(new THREE.Mesh(capsuleGeo(0.08,0.066,0.6),suit));
+    [-0.3,-0.33,-0.36].forEach((y,i)=>sh.add(ring(0.074-i*0.002,0.0065,suit,y,0.8)));
+    sh.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.068,0.068,0.045,20,1,true),tape),0,-0.54,0));
+    sh.add(ring(0.064,0.012,rubber,-0.6));// puño del guante
+    const gl=new THREE.Group();gl.position.y=-0.68;sh.add(gl);
+    gl.add(ell(0.055,1,1.25,0.8,rubber,0,0.01,0.005));
+    gl.add(ell(0.05,1,0.9,0.75,rubber,0,-0.06,0.012));// dedos juntos
+    const th=new THREE.Mesh(capsuleGeo(0.018,0.016,0.05,10),rubber);th.position.set(-sd*0.05,0.02,0.02);th.rotation.z=-sd*0.6;gl.add(th);
+    return sh;});
+  // capucha de una pieza con visor, empaque de goma y filtros
   const head=new THREE.Group();U.add(head);
-  head.add(cyl(0.11,0.13,0.12,suit).translateY(1.53));
-  head.add(ell(0.165,1,1.1,1.04,suit,0,1.64,0));
-  head.add(ell(1,0.108,0.13,0.06,visor,0,1.645,0.135));
-  [-1,1].forEach(sd=>{const f=cyl(0.03,0.032,0.06,rubber);f.rotation.x=Math.PI/2;f.position.set(sd*0.075,1.525,0.135);head.add(f);});
+  const hood=new THREE.Mesh(latheGeo([[0.104,1.5],[0.125,1.54],[0.152,1.58],[0.166,1.63],[0.168,1.69],[0.158,1.75],[0.13,1.8],[0.08,1.83],[0,1.84]],28),suit);hood.scale.z=1.04;head.add(hood);
+  head.add(ell(1,0.108,0.13,0.062,visor,0,1.655,0.133));
+  {const gk=new THREE.Mesh(new THREE.TorusGeometry(1,0.12,8,32),rubber);gk.scale.set(0.11,0.132,0.07);gk.position.set(0,1.655,0.13);head.add(gk);}
+  const hl=ell(1,0.035,0.05,0.02,new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.18}),-0.045,1.7,0.18);head.add(hl);// reflejo del visor
+  [-1,1].forEach(sd=>{const f=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.034,0.06,16),rubber);f.rotation.x=Math.PI/2;f.position.set(sd*0.072,1.535,0.135);head.add(f);
+    const gr=new THREE.Mesh(new THREE.CircleGeometry(0.024,16),metal);gr.position.set(sd*0.072,1.535,0.166);head.add(gr);
+    const rg=new THREE.Mesh(new THREE.TorusGeometry(0.031,0.005,6,16),metal);rg.position.set(sd*0.072,1.535,0.165);head.add(rg);});
   P2.head=head;
   // gafete: tarjeta con funda, separada del pecho y colgando de un clip
   const bc=mk(256,160);badgeDraw(bc,name);const bt=new THREE.CanvasTexture(bc);bt.anisotropy=4;
-  const bg=new THREE.Group();bg.position.set(0.075,1.3,0.162);bg.rotation.set(-0.08,0.18,0);U.add(bg);
+  const bg=new THREE.Group();bg.position.set(0.085,1.31,0.165);bg.rotation.set(-0.08,0.2,0);U.add(bg);
   const holder=new THREE.Mesh(new THREE.BoxGeometry(0.158,0.104,0.008),new THREE.MeshPhongMaterial({color:0x2a2c30,shininess:30}));holder.position.z=-0.005;bg.add(holder);
   const card=new THREE.Mesh(new THREE.PlaneGeometry(0.148,0.0925),new THREE.MeshBasicMaterial({map:bt}));card.position.z=0.0005;bg.add(card);
-  const clip=new THREE.Mesh(new THREE.BoxGeometry(0.03,0.034,0.012),zip);clip.position.set(0,0.064,-0.004);bg.add(clip);
+  const clip=new THREE.Mesh(new THREE.BoxGeometry(0.03,0.034,0.012),metal);clip.position.set(0,0.064,-0.004);bg.add(clip);
   P2.root=root;
   P2.setName=n=>{badgeDraw(bc,n);bt.needsUpdate=true;};
   // pose completa: caminar, aire, agacharse, inclinarse y mano izquierda al piso
@@ -1126,7 +1186,7 @@ function updateMe(){const on=(S.state==='play'||S.state==='pause')&&!S.scope&&!S
 /* mano en primera persona */
 const HAND_POSE={palanca:[0.0,0.0,0.03],bateriaE:[0.07,0.02,0.08],boton:[0.0,-0.01,0.03],cables:[0.0,-0.01,0.03],llaveE:[0.01,-0.01,0.03],pilaG:[0.07,0.02,0.08],fusible:[0.01,0.0,0.035],tiza:[0.01,-0.02,0.03],bengala:[0.0,-0.01,0.04],calmantes:[0.0,0.0,0.035],barra:[0.01,-0.02,0.03],brujula:[0.03,-0.06,0.04],linterna:[0.0,-0.005,0.035],agua:[0.045,0.12,0.03],nota:[0.03,-0.03,0.07],llave:[0.015,-0.025,0.03],caja:[0.12,0.01,0.15],
   bateria:[0.07,0.02,0.08],silbato:[0.01,-0.02,0.03],pilas:[0.015,-0.025,0.035]};
-function makeHand(side){side=side||1;const g=new THREE.Group(),suit=new THREE.MeshPhongMaterial({color:0xe5bf1c,shininess:45,specular:0x3a3010}),rubber=new THREE.MeshPhongMaterial({color:0x232326,shininess:18}),tape=new THREE.MeshPhongMaterial({color:0x141416});
+function makeHand(side){side=side||1;const TX=suitTex(),g=new THREE.Group(),suit=new THREE.MeshPhongMaterial({color:0xffffff,map:TX.fab,bumpMap:TX.fabB,bumpScale:0.004,shininess:40,specular:0x3a3010}),rubber=new THREE.MeshPhongMaterial({color:0xffffff,map:TX.rub,shininess:18}),tape=new THREE.MeshPhongMaterial({color:0x141416});
   const fist=new THREE.Mesh(new THREE.SphereGeometry(0.05,20,14),rubber);fist.scale.set(1,0.9,1.25);g.add(fist);
   for(let k=0;k<4;k++){const f=new THREE.Mesh(new THREE.SphereGeometry(0.017,10,8),rubber);f.scale.set(1.5,1,1);f.position.set(-0.042*side,0.012,0.042-k*0.028);g.add(f);}
   const th=new THREE.Mesh(new THREE.CylinderGeometry(0.013,0.014,0.05,8),rubber);th.position.set(0.0,0.04,-0.02);th.rotation.set(0.9,0,0.4*side);g.add(th);
