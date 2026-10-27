@@ -4223,23 +4223,6 @@ function makeRaft(){const g=new THREE.Group(),hw=L3.RW/2,hl=L3.RL/2,tr=0.26;
   const pad=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.06,1.5),new THREE.MeshLambertMaterial({color:0x6a4a2a}));pad.position.set(0.9,0.24,-0.8);pad.rotation.y=-0.25;g.add(pad);
   const bl=new THREE.Mesh(new THREE.BoxGeometry(0.24,0.03,0.4),new THREE.MeshLambertMaterial({color:0x6a4a2a}));bl.position.set(0.98,0.24,-0.02);bl.rotation.y=-0.25;g.add(bl);
   g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});return g;}
-// ----- ojos colosales en lo profundo -----
-function l3DeepEyes(G){const tex=l3EyeTex(true);G.eyeTex=tex;const grp=new THREE.Group();grp.visible=false;G.group.add(grp);
-  const mats=[];for(let i=0;i<3;i++){const m=new THREE.MeshBasicMaterial({map:tex,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending,fog:false,color:0xc8d8a0});
-    const e=new THREE.Mesh(new THREE.PlaneGeometry(64,32),m);e.rotation.x=-Math.PI/2;e.renderOrder=3;grp.add(e);mats.push(m);
-    const h=glowSprite(0xd8c070,120,false);h.material.opacity=0;h.renderOrder=3;e.add(h);e.userData.halo=h;}
-  G.deep={grp,mats,t:-1,cd:14+Math.random()*10};}
-function l3DeepTick(G,dt,a,near){const D=G.deep;
-  if(D.t>=0){D.t+=dt;const T=D.life,f=Math.min(1,D.t/2.5,(T-D.t)/2.5),bl=Math.abs(D.t-T*0.55)<0.35?Math.abs(D.t-T*0.55)/0.35:1;
-    D.grp.children.forEach((e,i)=>{e.material.opacity=Math.max(0,f)*0.6*(i<D.n?1:0);e.userData.halo.material.opacity=Math.max(0,f)*0.16*(i<D.n?1:0);e.scale.set(1,1,1);e.scale.y=Math.max(0.05,bl);});
-    if(D.t>=T){D.t=-1;D.grp.visible=false;}return;}
-  if(!near||a<L3.EYES||a>L3.SWALLOW-4||(a>L3.BREACH-6&&a<L3.BREACH+70))return;
-  D.cd-=dt;if(D.cd>0)return;
-  const look=P.pitch<-0.22||(S.camY<l3Surf(P.x,P.z));if(!look)return;
-  D.cd=a>L3.BREACH?9+Math.random()*12:16+Math.random()*16;D.t=0;D.life=7+Math.random()*4;D.n=Math.random()<0.45?3:Math.random()<0.6?2:1;
-  const fx=-Math.sin(P.yaw),fz=-Math.cos(P.yaw),d=35+Math.random()*70,side=(Math.random()-0.5)*50,depth=100+Math.random()*120,yaw=Math.random()*6.283;
-  D.grp.position.set(P.x+fx*d-fz*side,L3.SEA-depth,P.z+fz*d+fx*side);D.grp.rotation.y=yaw;D.grp.children.forEach((e,i)=>{e.position.set((i-(D.n-1)/2)*78,0,(i===1?-14:0));});D.grp.visible=true;
-  tone(34,0,6,0.16,'sine');tone(51,0.8,5,0.07,'sine');S.san=Math.max(0,S.san-0.02);}
 // ----- la serpiente -----
 function l3PathTable(fn,u0,u1,step){const pts=[],cum=[0];for(let u=u0;u<=u1+1e-6;u+=step){pts.push(fn(u));}for(let i=1;i<pts.length;i++)cum.push(cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));return {pts,cum,len:cum[cum.length-1]};}
 function l3PathAt(T,s,out){const c=T.cum,n=c.length;if(s<=0){out[0]=T.pts[0][0];out[1]=T.pts[0][1];return out;}if(s>=c[n-1]){const p=T.pts[n-1],q=T.pts[n-2],k=(s-c[n-1])/(c[n-1]-c[n-2]);out[0]=p[0]+(p[0]-q[0])*k;out[1]=p[1]+(p[1]-q[1])*k;return out;}
@@ -4347,9 +4330,9 @@ function makeSerpent(G){const NS=200,NR=32,sk=l3SkinTex(),skin=sk.map;G.skin=ski
   const eyeT=l3EyeTex(false),eyes=[];
   for(const sx of [-1,1])[[0.55,12],[0.42,11],[0.3,9.5]].forEach(([u,r])=>{const p=surf(u,sx>0?0.2:0.8),eg=new THREE.Group();eg.position.copy(p);eg.lookAt(p.x*3,p.y+Math.abs(p.x)*0.25,p.z+Math.abs(p.x)*0.5);top.add(eg);
     const mound=new THREE.Mesh(new THREE.SphereGeometry(1,24,16),hm);mound.scale.set(r*1.75,r*1.05,r*0.75);mound.position.z=-r*0.3;eg.add(mound);
-    const bg=new THREE.SphereGeometry(1,28,18,0,Math.PI*2,0,Math.PI*0.42);{const pp=bg.attributes.position,uu=bg.attributes.uv;for(let q=0;q<pp.count;q++)uu.setXY(q,0.5+pp.getX(q)*0.5,0.5-pp.getZ(q)*0.5);}const ball=new THREE.Mesh(bg,new THREE.MeshBasicMaterial({map:eyeT,fog:false}));ball.rotation.x=Math.PI/2;ball.scale.set(r*1.55,r*0.62,r*0.85);ball.position.z=r*0.06;eg.add(ball);
-    const pup=new THREE.Mesh(new THREE.CircleGeometry(1,18),new THREE.MeshBasicMaterial({color:0x040302,fog:false}));pup.scale.set(r*0.15,r*0.55,1);pup.position.z=r*0.88;eg.add(pup);
-    const gl=glowSprite(0xffd870,r*3.6,false);gl.material.opacity=0.35;gl.position.z=r;eg.add(gl);
+    const bg=new THREE.SphereGeometry(1,28,18,0,Math.PI*2,0,Math.PI*0.42);{const pp=bg.attributes.position,uu=bg.attributes.uv;for(let q=0;q<pp.count;q++)uu.setXY(q,0.5+pp.getX(q)*0.5,0.5-pp.getZ(q)*0.5);}const ball=new THREE.Mesh(bg,new THREE.MeshBasicMaterial({map:eyeT,fog:false,transparent:true,depthWrite:false}));ball.renderOrder=4;ball.rotation.x=Math.PI/2;ball.scale.set(r*1.55,r*0.62,r*0.85);ball.position.z=r*0.06;eg.add(ball);
+    const pup=new THREE.Mesh(new THREE.CircleGeometry(1,18),new THREE.MeshBasicMaterial({color:0x040302,fog:false,transparent:true,depthWrite:false}));pup.scale.set(r*0.15,r*0.55,1);pup.position.z=r*0.88;pup.renderOrder=5;eg.add(pup);
+    const gl=glowSprite(0xffd870,r*3.6,false);gl.material.opacity=0.35;gl.position.z=r;gl.renderOrder=4;eg.add(gl);
     const brow=new THREE.Mesh(new THREE.SphereGeometry(1,16,10),hm);brow.scale.set(r*1.9,r*0.4,r*0.7);brow.position.set(0,r*0.95,r*0.05);brow.rotation.x=-0.3;eg.add(brow);
     eyes.push({g:eg,pup,r,sx});});
   // aletas de las mejillas: membrana con borde festoneado y nervios finos
@@ -4385,13 +4368,16 @@ function makeSerpent(G){const NS=200,NR=32,sk=l3SkinTex(),skin=sk.map;G.skin=ski
   G.ser.eatT=l3PathTable(w=>[w,w>=1100?70-0.5*(w-1100):w>=-400?70:70-0.32*(-400-w)],-2600,3600,6);
   const ET=G.ser.eatT;ET.pts.reverse();{const c=[0];for(let i=1;i<ET.pts.length;i++)c.push(c[i-1]+Math.hypot(ET.pts[i][0]-ET.pts[i-1][0],ET.pts[i][1]-ET.pts[i-1][1]));ET.cum=c;ET.len=c[c.length-1];}
   G.ser.eStart=l3SFind(ET,(a,b)=>a[0]>=3000&&b[0]<3000);G.ser.eHit=l3SFind(ET,(a,b)=>a[0]>=230&&b[0]<230);
-  G.ser.eatSpd=150;G.ser.eatHitT=(G.ser.eHit-G.ser.eStart)/150;}
+  G.ser.eatSpd=150;G.ser.eatHitT=(G.ser.eHit-G.ser.eStart)/150;
+  G.ser.wanT=l3PathTable(th=>[520*Math.sin(th)+70*Math.sin(3.1*th),900*Math.cos(th)+90*Math.sin(2.3*th)],0,Math.PI*7,0.01);
+  // brillo que se ve a través del agua mientras nada abajo: los mismos fotóforos, sumados encima del mar
+  const gb=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({map:gT,color:0x7affe0,transparent:true,opacity:0.6,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));gb.renderOrder=3;gb.frustumCulled=false;gb.visible=false;G.group.add(gb);G.ser.glowB=gb;}
 const _sv=[0,0],_sv2=[0,0],_sT=new THREE.Vector3(),_sB=new THREE.Vector3(),_sN=new THREE.Vector3(),_sX=new THREE.Vector3(),_sP=new THREE.Vector3(),_sM=new THREE.Matrix4(),_sQ=new THREE.Vector3();
 // ev: {T: tabla, sH: s de la cabeza, map(u,v)->mundo, N: normal del plano}
 function l3PoseSerpent(G,ev,sH,jaw){const Z=G.ser,NS=Z.NS,NR=Z.NR,pos=Z.pos,ds=L3.SLEN/(NS-1);
   const toW=(p,o)=>ev.map(p[0],p[1],o);
   for(let i=0;i<NS;i++){const s=sH-i*ds,s2=s+4;l3PathAt(ev.T,s,_sv);l3PathAt(ev.T,s2,_sv2);toW(_sv,_sP);toW(_sv2,_sQ);
-    _sT.subVectors(_sQ,_sP).normalize();_sN.copy(ev.N);_sB.crossVectors(_sT,_sN).normalize();_sX.crossVectors(_sB,_sT).normalize();
+    _sT.subVectors(_sQ,_sP).normalize();if(ev.horiz){_sB.set(0,1,0);_sX.crossVectors(_sB,_sT).normalize();_sB.crossVectors(_sT,_sX).normalize();}else{_sN.copy(ev.N);_sB.crossVectors(_sT,_sN).normalize();_sX.crossVectors(_sB,_sT).normalize();}
     // grosor: cuello un poco más delgado, cuerpo ancho que se va afinando hasta la cola
     const f=i/(NS-1),r=L3.SRAD*(f<0.025?0.9+0.1*f/0.025:f<0.1?1+0.08*sstep(0.025,0.1,f):f<0.5?1.08:1.08-1.0*sstep(0.5,1,f))*(1+0.025*Math.sin(i*0.7)*Math.sin(i*0.13));
     for(let j=0;j<=NR;j++){const a=j/NR*Math.PI*2-Math.PI/2,ca=Math.cos(a),sa=Math.sin(a),rr=r*(1+0.16*Math.pow(Math.max(0,sa),10)-0.08*Math.pow(Math.max(0,-sa),2)),k=(i*(NR+1)+j)*3;
@@ -4415,7 +4401,7 @@ function l3PoseSerpent(G,ev,sH,jaw){const Z=G.ser,NS=Z.NS,NR=Z.NR,pos=Z.pos,ds=L
   for(const t of Z.tent){t.pv.rotation.x=0.18*Math.sin(S.t*0.9+t.ph)+(jaw||0)*0.4;t.pv.rotation.z=0.12*Math.sin(S.t*0.7+t.ph*1.3);}
   // los ojos te siguen
   Z.head.updateMatrixWorld(true);for(const e of Z.eyes){e.g.worldToLocal(_sQ.copy(camera.position));_sQ.normalize();e.pup.position.x=clamp(_sQ.x,-0.8,0.8)*e.r*0.3;e.pup.position.y=clamp(_sQ.y,-0.8,0.8)*e.r*0.1;}}
-function l3HideSerpent(G){const Z=G.ser;Z.body.visible=Z.head.visible=Z.fins.visible=Z.gullet.visible=false;}
+function l3HideSerpent(G){const Z=G.ser;Z.body.visible=Z.head.visible=Z.fins.visible=Z.gullet.visible=false;if(Z.glowB)Z.glowB.visible=false;}
 // ----- criaturas que merodean el trayecto -----
 function l3EelTex(){const c=mk(256,128),g=c.getContext('2d'),R=rng(611);g.fillStyle='#2f3836';g.fillRect(0,0,256,128);
   const bl=g.createLinearGradient(0,128,0,0);bl.addColorStop(0,'rgba(170,165,140,.9)');bl.addColorStop(0.2,'rgba(0,0,0,0)');bl.addColorStop(0.8,'rgba(0,0,0,0)');bl.addColorStop(1,'rgba(170,165,140,.9)');g.fillStyle=bl;g.fillRect(0,0,256,128);
@@ -4579,7 +4565,7 @@ function buildLevel3(){
     wr.position.set(G.spawn.x+5,l3IslH(G.spawn.x+5,G.spawn.z-2)+0.06,G.spawn.z-2);grp.add(wr);}
   // balsas y criatura
   G.raftMesh=()=>{const m=makeRaft();grp.add(m);return m;};
-  l3DeepEyes(G);makeSerpent(G);l3FaunaBuild(G);
+  makeSerpent(G);l3FaunaBuild(G);
   addElevLights(grp,true);
   // ----- suelo, colisiones y agua -----
   G.ground=function(x,z,y){
@@ -4628,7 +4614,6 @@ function l3Tick(G,dt){
     if(dockR&&dockR.inf>=1){const d=l3SD(P.x-dockR.x,P.z-dockR.z,L3.RW/2,L3.RL/2,L3.RC);if(d<0&&P.y>dockR.base-0.2&&!S.swim){G.boardT=(G.boardT||0)+dt;if(G.boardT>0.6){G.boardT=0;l3StartRun();}}else G.boardT=0;}}
   // ---- la carrera más cercana manda: ojos, salto y ataque ----
   const mr=l3MyRun(G),a=mr?l3Age(mr.run):-1;
-  l3DeepTick(G,dt,a,!!mr&&Math.hypot(P.x-mr.x,P.z-mr.z)<400);
   l3SerpentTick(G,dt,mr,a);
   l3FaunaTick(G,dt,mr,a);
   l3StormTick(G,dt);
@@ -4640,6 +4625,7 @@ function l3Tick(G,dt){
 function l3SerpentTick(G,dt,mr,a){const Z=G.ser;
   if(!mr){l3HideSerpent(G);G.amb=0;return;}
   const rr=mr.run,seed=parseInt(rr.id,36)||1,side=(seed&1)?1:-1;
+  Z.glowB.visible=false;Z.eyes.forEach(e=>e.g.visible=true);
   // salto: un costado de la balsa, a ~750 m
   const tb=a-L3.BREACH;
   if(tb>=0&&tb<Z.jumpEnd){const z0=L3.DOCK+l3Dist(L3.BREACH)+250,x0=mr.x+side*1150;
@@ -4655,6 +4641,17 @@ function l3SerpentTick(G,dt,mr,a){const Z=G.ser;
       setTimeout(()=>{if(S.floor===3){S.scareShake=Math.max(S.scareShake||0,1.2);noiseBurst(3,300,0.25);}},Math.max(0,dEn-60)/32*1000);S.san=Math.max(0,S.san-0.12);}
     if(sH>=Z.jEntry&&sH<Z.jEntry+L3.SLEN&&Math.random()<dt*4)l3Spray(G,nx,nz,1,1.6);
     G.amb=0.12*clamp(1-Math.abs(tb-30)/40,0,1);return;}
+  // nado bajo el agua: entre el minuto 1 y el salto, y entre el salto y el ataque
+  const w1=a>=L3.EYES&&a<L3.BREACH-3,w2s=L3.BREACH+Z.jumpEnd+4,w2=a>=w2s&&a<L3.SWALLOW-2;
+  if(w1||w2){const t0=w1?L3.EYES:w2s,t=a-t0,tEnd=(w1?L3.BREACH-3:L3.SWALLOW-2)-t0,rz0=L3.DOCK+l3Dist(t0)+260,cx=mr.x+side*120,dep=L3.SEA-255;
+    const ev=Z.evW||(Z.evW={T:Z.wanT,horiz:true,map:null});ev.map=(u,v,o)=>o.set(cx+u*side,dep+22*Math.sin((u+v)*0.004),rz0+v);
+    const sH=L3.SLEN+400+t*48;l3PoseSerpent(G,ev,sH,0.05+0.04*Math.sin(t*0.6));
+    const fade=Math.min(1,t/6,(tEnd-t)/5);Z.glowB.visible=true;Z.glowB.material.opacity=0.55*fade*(0.75+0.25*Math.sin(S.t*1.7));
+    Z.eyes.forEach(e=>e.g.visible=fade>0.05);
+    // cuando la cabeza pasa cerca por debajo: un gemido grave
+    const hp=Z.head.position,dh=Math.hypot(hp.x-P.x,hp.z-P.z),key=rr.id+(w1?'a':'b')+Math.floor(t/30);
+    if(dh<260&&G.wn!==key){G.wn=key;tone(31,0,6,0.22,'sine');tone(46,0.6,5,0.12,'sine');noiseBurst(4,90,0.08);S.san=Math.max(0,S.san-0.03);}
+    G.amb=0.05+0.12*clamp(1-dh/600,0,1);return;}
   // ataque de frente: aparece adelante de la balsa y se la traga
   const te=a-L3.SWALLOW;
   if(te>=0&&te<Z.eatHitT+30){const zr=L3.DOCK+l3Dist(L3.SWALLOW+Z.eatHitT);const ev=Z.evE||(Z.evE={T:Z.eatT,N:new THREE.Vector3(-1,0,0),map:null});ev.map=(u,v,o)=>o.set(mr.x,L3.SEA+v,zr+u);
