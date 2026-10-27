@@ -4380,12 +4380,6 @@ function l3EelTex(){const c=mk(256,128),g=c.getContext('2d'),R=rng(611);g.fillSt
   for(let i=0;i<70;i++){g.fillStyle='rgba(8,10,10,'+(0.3+R()*0.4)+')';g.beginPath();g.ellipse(R()*256,32+R()*64,3+R()*9,2+R()*5,R()*3,0,7);g.fill();}
   for(let i=0;i<20;i++){g.strokeStyle='rgba(200,190,170,.25)';g.lineWidth=1+R();g.beginPath();const x=R()*256,y=R()*128;g.moveTo(x,y);g.lineTo(x+(R()-0.5)*40,y+(R()-0.5)*10);g.stroke();}
   noise(g,256,128,14);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;}
-function l3PaleTex(ribs){const c=mk(256,256),g=c.getContext('2d'),R=rng(733);g.fillStyle='#b8b4a8';g.fillRect(0,0,256,256);
-  for(let i=0;i<140;i++){const x=R()*256,y=R()*256,r=6+R()*26,gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,R()<0.5?'rgba(90,100,96,.35)':'rgba(120,80,80,.25)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(x-r,y-r,2*r,2*r);}
-  // costillas marcadas y venas
-  if(ribs)for(let y=40;y<200;y+=13){g.strokeStyle='rgba(60,58,52,.45)';g.lineWidth=3;g.beginPath();g.moveTo(20,y);g.quadraticCurveTo(128,y+18,236,y);g.stroke();g.strokeStyle='rgba(235,232,222,.35)';g.lineWidth=2;g.beginPath();g.moveTo(20,y-4);g.quadraticCurveTo(128,y+14,236,y-4);g.stroke();}
-  for(let i=0;i<30;i++){let x=R()*256,y=R()*256,a=R()*6.28;g.strokeStyle='rgba(70,80,110,.3)';g.lineWidth=1;g.beginPath();g.moveTo(x,y);for(let k=0;k<12;k++){a+=(R()-0.5)*0.8;x+=Math.cos(a)*5;y+=Math.sin(a)*5;g.lineTo(x,y);}g.stroke();}
-  noise(g,256,256,16);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;}
 function l3MedTex(){const c=mk(256,256),g=c.getContext('2d');g.fillStyle='#000';g.fillRect(0,0,256,256);
   // canales radiales, anillos y manchas que brillan
   for(let k=0;k<16;k++){const a=k/16*6.283;g.strokeStyle='rgba(170,255,240,.55)';g.lineWidth=k%2?1.5:3;g.beginPath();g.moveTo(128,128);for(let r=0;r<=128;r+=8)g.lineTo(128+Math.cos(a+Math.sin(r*0.05)*0.05)*r,128+Math.sin(a+Math.sin(r*0.05)*0.05)*r);g.stroke();}
@@ -4408,7 +4402,7 @@ function l3EelBody(M){const N=M.N,NR=M.NR,RG=M.RG,pos=M.bpos,fp=M.fpos,nodes=M.s
   M.bgeo.attributes.position.needsUpdate=true;M.bgeo.computeVertexNormals();M.bgeo.computeBoundingSphere();M.fgeo.attributes.position.needsUpdate=true;M.fgeo.computeVertexNormals();M.fgeo.computeBoundingSphere();
   // la cabeza va pegada al primer nodo
   M.head.position.copy(nodes[0].position);M.head.quaternion.copy(nodes[0].quaternion);M.body.visible=M.fins.visible=M.head.visible=true;}
-function l3FaunaBuild(G){const F={grp:new THREE.Group(),mer:[],hum:[],med:[],sunk:{}};G.group.add(F.grp);G.fauna=F;
+function l3FaunaBuild(G){const F={grp:new THREE.Group(),mer:[],med:[]};G.group.add(F.grp);G.fauna=F;
   // ---- anguilas gigantes: cuerpo de una sola pieza que se recalcula siguiendo una curva ----
   const eelM=new THREE.MeshPhongMaterial({map:l3EelTex(),color:0xb0b8b4,shininess:50,specular:0x334040}),finM=new THREE.MeshPhongMaterial({color:0x2a3534,side:THREE.DoubleSide,shininess:30,transparent:true,opacity:0.92}),
     toothM=new THREE.MeshLambertMaterial({color:0xd8d0b8}),eyeM=new THREE.MeshBasicMaterial({color:0xd8f0d0,fog:false});
@@ -4436,36 +4430,6 @@ function l3FaunaBuild(G){const F={grp:new THREE.Group(),mer:[],hum:[],med:[],sun
     const pecS=new THREE.Shape();pecS.moveTo(0,0);pecS.quadraticCurveTo(1.2,0.3,2.2,-0.6);pecS.quadraticCurveTo(1.2,-0.4,0.2,-0.8);pecS.lineTo(0,0);
     [-1,1].forEach(sx=>{const pf=new THREE.Mesh(new THREE.ShapeGeometry(pecS,6),finM);pf.scale.set(sx*s,s,s);pf.rotation.set(-Math.PI/2+0.3,0,0);pf.position.set(sx*1.3*s,-0.6*s,-0.5*s);segs[1].add(pf);});
     const M={segs,N,L,NR,RG,R0:42+m*26,w:(m%2?-1:1)*(0.07+m*0.012),th:m*1.7,T:13+m*3.4,ph:m*3.1,was:false,cpts,curve,bpos,bgeo,body,fpos,fgeo,fins,head};M.update=()=>l3EelBody(M);F.mer.push(M);}
-  // ---- ahogados gigantes: cuerpo de una pieza, costillas, manos con dedos y pelo mojado ----
-  const pale=new THREE.MeshPhongMaterial({map:l3PaleTex(false),color:0x8e968e,shininess:60,specular:0x3a4040}),ribM=new THREE.MeshPhongMaterial({map:rep(l3PaleTex(true),1,1),color:0x8e968e,shininess:60,specular:0x3a4040}),
-    dark=new THREE.MeshBasicMaterial({color:0x050404}),hairM=new THREE.MeshPhongMaterial({color:0x0b0a0a,shininess:80,specular:0x333333});
-  for(let m=0;m<6;m++){const root=new THREE.Group();root.visible=false;F.grp.add(root);
-    // torso: pelvis, cintura hundida, costillas marcadas, pecho y hombros caídos
-    const tor=new THREE.Mesh(latheGeo([[0.001,-0.9],[0.24,-0.85],[0.28,-0.5],[0.2,0],[0.18,0.25],[0.28,0.6],[0.33,0.95],[0.34,1.25],[0.31,1.45],[0.22,1.6],[0.1,1.7],[0.001,1.72]],18),ribM);tor.scale.z=0.62;root.add(tor);
-    // omóplatos y clavículas que se marcan bajo la piel
-    [-1,1].forEach(sx=>{const bl=new THREE.Mesh(new THREE.SphereGeometry(1,12,8),pale);bl.scale.set(0.12,0.16,0.05);bl.position.set(sx*0.15,1.25,-0.19);bl.rotation.z=sx*0.3;root.add(bl);
-      const cl=new THREE.Mesh(capsuleGeo(0.03,0.025,0.32,8),pale);cl.position.set(sx*0.04,1.55,0.15);cl.rotation.z=sx*1.4;root.add(cl);});
-    const neck=new THREE.Mesh(capsuleGeo(0.075,0.09,0.62,10),pale);neck.position.y=2.28;root.add(neck);
-    const hd=new THREE.Group();hd.position.y=2.24;root.add(hd);
-    const skull=new THREE.Mesh(latheGeo([[0.001,-0.22],[0.09,-0.2],[0.14,-0.1],[0.17,0.05],[0.2,0.22],[0.19,0.36],[0.14,0.46],[0.001,0.5]],16),pale);skull.scale.z=1.08;hd.add(skull);
-    [-1,1].forEach(sx=>{const ck=new THREE.Mesh(new THREE.SphereGeometry(1,10,8),pale);ck.scale.set(0.05,0.04,0.06);ck.position.set(sx*0.13,0.08,0.13);hd.add(ck);
-      const so=new THREE.Mesh(new THREE.SphereGeometry(0.058,12,10),dark);so.scale.set(1,1.45,0.55);so.position.set(sx*0.075,0.2,0.175);hd.add(so);const pu=glowSprite(0xf4f0d0,0.09,true);pu.material.opacity=0.95;pu.position.set(sx*0.075,0.19,0.2);hd.add(pu);
-      const ns=new THREE.Mesh(new THREE.SphereGeometry(0.012,6,5),dark);ns.position.set(sx*0.015,0.07,0.205);hd.add(ns);});
-    const mouth=new THREE.Mesh(new THREE.SphereGeometry(0.05,10,8),dark);mouth.scale.set(0.9,3.2,0.5);mouth.position.set(0,-0.08,0.165);hd.add(mouth);
-    // pelo: mechones mojados que cuelgan pegados por detrás y a los lados
-    for(let k=0;k<40;k++){const a=(k/39-0.5)*3.6,hl=1.0+((k*13)%7)*0.18,x0=Math.sin(a)*0.19,z0=-Math.cos(a)*0.18+0.02,pts=[];
-      for(let q=0;q<=6;q++){const t=q/6;pts.push(new THREE.Vector3(x0*(1+t*0.25)+Math.sin(k*1.7+t*3)*0.03,0.44-t*hl,z0*(1+t*0.3)-t*0.04));}
-      hd.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),8,0.013-((k%3)*0.003),4,false),hairM));}
-    // brazos largos de una pieza, codo marcado, manos con dedos de dos falanges
-    const arms=[];[-1,1].forEach(sx=>{const sp=new THREE.Group();sp.position.set(sx*0.38,1.5,0);root.add(sp);const sh=new THREE.Mesh(new THREE.SphereGeometry(0.1,12,10),pale);sp.add(sh);
-      sp.add(new THREE.Mesh(capsuleGeo(0.095,0.07,1.5,10),pale));const el=new THREE.Group();el.position.y=-1.5;sp.add(el);el.add(new THREE.Mesh(capsuleGeo(0.07,0.05,1.55,10),pale));
-      const hand=new THREE.Group();hand.position.y=-1.55;el.add(hand);const palm=new THREE.Mesh(new THREE.SphereGeometry(1,10,8),pale);palm.scale.set(0.075,0.12,0.035);palm.position.y=-0.09;hand.add(palm);
-      for(let q=0;q<4;q++){const f1=new THREE.Group();f1.position.set((q-1.5)*0.038,-0.19,0);f1.rotation.set(0.12,0,(q-1.5)*0.1);hand.add(f1);f1.add(new THREE.Mesh(capsuleGeo(0.017,0.015,0.3,6),pale));
-        const f2=new THREE.Group();f2.position.y=-0.3;f2.rotation.x=0.35;f1.add(f2);f2.add(new THREE.Mesh(capsuleGeo(0.015,0.01,0.26,6),pale));}
-      const th=new THREE.Group();th.position.set(-sx*0.06,-0.06,0.03);th.rotation.set(0.3,0,-sx*0.6);hand.add(th);th.add(new THREE.Mesh(capsuleGeo(0.018,0.013,0.24,6),pale));
-      sp.rotation.z=sx*0.32;arms.push({sp,el,sx});});
-    root.traverse(o=>{if(o.isMesh)o.castShadow=false;});
-    F.hum.push({root,hd,arms,slot:-1,y:0});}
   // ---- medusas abisales: campana con borde ondulado y canales, brazos orales y muchos tentáculos ----
   const mt=l3MedTex(),bellM=new THREE.MeshBasicMaterial({color:0x6fb8b0,map:mt,transparent:true,opacity:0.5,blending:THREE.AdditiveBlending,depthWrite:false,fog:false,side:THREE.DoubleSide}),
     armM=new THREE.MeshBasicMaterial({color:0x8a5a80,transparent:true,opacity:0.16,blending:THREE.AdditiveBlending,depthWrite:false,fog:false,side:THREE.DoubleSide});
@@ -4492,18 +4456,6 @@ function l3FaunaTick(G,dt,mr,a){const F=G.fauna;if(!F)return;
     l3EelBody(M);const hy=M.segs[2].position.y,up=hy>L3.SEA-0.6;
     if(up&&!M.was){const p=M.segs[2].position,d=Math.hypot(p.x-P.x,p.z-P.z);waterRipple(p.x,p.z,0.3,L3.SEA);if(d<140){noiseBurst(0.9,240,0.07*clamp(1-d/140,0.1,1));tone(62,0,1.4,0.05*clamp(1-d/140,0,1),'sine');}if(d<60)S.san=Math.max(0,S.san-0.01);}
     M.was=up;}
-  // los que esperan: posiciones fijas a los lados del trayecto
-  const slots=[];if(on){for(let k=0;k<12;k++){const h=hash3(k,parseInt(mr.run.id,36)||1,91),u=(h%1000)/1000,sd=k%2?1:-1,z=L3.DOCK+60+k*48+u*30,x=sd*(26+((h>>10)%1000)/1000*120);slots.push({k,x,z,s:5.5+Math.abs(x)*0.04,d:Math.hypot(x-P.x,z-P.z)});}slots.sort((p,q)=>p.d-q.d);}
-  const want=slots.filter(s=>!F.sunk[mr.run.id+':'+s.k]||F.sunk[mr.run.id+':'+s.k]<1).slice(0,F.hum.length);
-  F.hum.forEach(H=>{const sl=want.find(s=>s.k===H.slot);if(!sl)H.slot=-1;});
-  for(const sl of want){if(F.hum.some(H=>H.slot===sl.k))continue;const H=F.hum.find(q=>q.slot<0);if(!H)break;H.slot=sl.k;H.sl=sl;}
-  for(const H of F.hum){if(H.slot<0||!on){H.root.visible=false;continue;}const sl=want.find(s=>s.k===H.slot)||H.sl,key=mr.run.id+':'+sl.k;let sk=F.sunk[key]||0;
-    const d=Math.hypot(sl.x-P.x,sl.z-P.z);if(d<34||calm)sk=Math.min(1,sk+dt*0.25);F.sunk[key]=sk;
-    H.root.visible=sk<1;H.root.scale.setScalar(sl.s);H.root.position.set(sl.x,L3.SEA-0.1-sk*sl.s*3.2+Math.sin(t*0.6+sl.k)*0.15,sl.z);
-    // la cara gira hacia ti; el cuerpo tarda más
-    const yaw=Math.atan2(P.x-sl.x,P.z-sl.z);H.root.rotation.y+=(yaw*0.6-H.root.rotation.y)*Math.min(1,dt*0.3);H.hd.rotation.y+=((yaw-H.root.rotation.y)-H.hd.rotation.y)*Math.min(1,dt*1.2);H.hd.rotation.z=(sl.k%2?1:-1)*(0.45+0.15*Math.sin(t*0.3+sl.k));
-    H.arms.forEach(A=>{A.sp.rotation.x=0.05*Math.sin(t*0.5+sl.k+A.sx);A.el.rotation.x=-0.1+0.06*Math.sin(t*0.4+A.sx);A.el.rotation.z=-A.sx*0.18;});
-    if(d<120&&sk<0.05&&!H.seen){H.seen=true;tone(110,0,2.5,0.03,'sine');tone(116,0.1,2.5,0.03,'sine');}if(d>160)H.seen=false;}
   // medusas
   for(const M of F.med){if(!on){M.g.visible=false;M.live=false;continue;}
     if(!M.live||Math.hypot(M.x-rx,M.z-rz)>95){const ang=Math.random()*6.283,r=25+Math.random()*60;M.x=rx+Math.cos(ang)*r;M.z=rz+18+Math.sin(ang)*r;M.y=L3.SEA-6-Math.random()*8;M.live=true;}
