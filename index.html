@@ -4267,6 +4267,15 @@ function l3Glow(m,tex,col){m.emissive=new THREE.Color(col||0x7affe0);m.emissiveM
     sh.fragmentShader='uniform float uGlowT; uniform float uGlowK;\n'+sh.fragmentShader
       .replace('#include <emissivemap_fragment>','#ifdef USE_EMISSIVEMAP\n vec4 emissiveColor=texture2D(emissiveMap,vUv);\n float pl=0.35+0.65*pow(0.5+0.5*sin(vUv.x*7.0-uGlowT*1.8),3.0);\n totalEmissiveRadiance*=emissiveColor.rgb*pl*uGlowK;\n#endif')
       .replace('#include <fog_fragment>','#ifdef USE_FOG\n float fogFactor=smoothstep(fogNear,fogFar,fogDepth)*0.6; gl_FragColor.rgb=mix(gl_FragColor.rgb,fogColor,fogFactor); gl_FragColor.rgb+=totalEmissiveRadiance*fogFactor;\n#endif');};return m;}
+// carne de la garganta: anillos (como tráquea), pliegues, venas, baba brillante y algunos puntos luminosos
+function l3FleshTex(){const W=512,H=512,c=mk(W,H),e=mk(W,H),g=c.getContext('2d'),h=e.getContext('2d'),R=rng(8181);
+  const bg=g.createLinearGradient(0,0,W,0);bg.addColorStop(0,'#3a1218');bg.addColorStop(0.5,'#5a1c24');bg.addColorStop(1,'#3a1218');g.fillStyle=bg;g.fillRect(0,0,W,H);h.fillStyle='#000';h.fillRect(0,0,W,H);
+  for(let y=0;y<H;y+=24){const gr=g.createLinearGradient(0,y,0,y+24);gr.addColorStop(0,'rgba(20,4,8,.75)');gr.addColorStop(0.35,'rgba(140,60,70,.55)');gr.addColorStop(0.55,'rgba(200,110,120,.35)');gr.addColorStop(1,'rgba(20,4,8,.7)');g.fillStyle=gr;
+    g.beginPath();g.moveTo(0,y);for(let x=0;x<=W;x+=16)g.lineTo(x,y+Math.sin(x*0.03+y)*3);g.lineTo(W,y+24);g.lineTo(0,y+24);g.closePath();g.fill();}
+  for(let i=0;i<28;i++){let x=R()*W,y=R()*H,a=Math.PI/2+(R()-0.5)*0.6;g.strokeStyle='rgba(40,10,40,'+(0.3+R()*0.4)+')';g.lineWidth=1.5+R()*3;g.beginPath();g.moveTo(x,y);for(let k=0;k<26;k++){a+=(R()-0.5)*0.5;x+=Math.cos(a)*8;y+=Math.sin(a)*8;g.lineTo(x,y);if(R()<0.08){g.stroke();g.lineWidth*=0.7;g.beginPath();g.moveTo(x,y);}}g.stroke();}
+  for(let i=0;i<70;i++){const x=R()*W,y=R()*H,l=10+R()*50;g.strokeStyle='rgba(230,200,200,'+(0.1+R()*0.2)+')';g.lineWidth=1+R()*2.5;g.beginPath();g.moveTo(x,y);g.quadraticCurveTo(x+(R()-0.5)*8,y+l/2,x+(R()-0.5)*6,y+l);g.stroke();}
+  for(let i=0;i<90;i++){const x=R()*W,y=R()*H,r=2+R()*5,gr=h.createRadialGradient(x,y,0,x,y,r*3);gr.addColorStop(0,'rgba(120,255,220,1)');gr.addColorStop(0.3,'rgba(80,200,180,.6)');gr.addColorStop(1,'rgba(0,0,0,0)');h.fillStyle=gr;h.fillRect(x-r*3,y-r*3,r*6,r*6);}
+  noise(g,W,H,10);const t=new THREE.CanvasTexture(c),gt=new THREE.CanvasTexture(e);[t,gt].forEach(x=>{x.wrapS=x.wrapT=THREE.RepeatWrapping;});return {map:t,glow:gt};}
 function makeSerpent(G){const NS=200,NR=32,sk=l3SkinTex(),skin=sk.map;G.skin=skin;const K=L3.SRAD/50;
   const gT=l3GlowTex();const mat=l3Glow(new THREE.MeshPhongMaterial({map:skin,bumpMap:sk.bump,bumpScale:2.2,color:0xc4ccc8,shininess:22,specular:0x2a3030}),gT);
   // aletas del lomo y dos hileras de púas a los costados: triángulos que se recalculan con el cuerpo
@@ -4290,7 +4299,7 @@ function makeSerpent(G){const NS=200,NR=32,sk=l3SkinTex(),skin=sk.map;G.skin=ski
   // corona de cuernos
   [-1,1].forEach(sx=>{[[44,40,6,7,70,-1.25,0.35],[32,38,-20,5.5,52,-1.35,0.2],[52,24,-26,4.5,44,-1.4,0.6],[22,34,-40,4,36,-1.45,0.1]].forEach(([x,y,z,r,l,rx,rz])=>{const c=new THREE.Mesh(new THREE.ConeGeometry(r,l,10),boneM);c.position.set(sx*x,y,z);c.rotation.set(rx,0,-sx*rz);top.add(c);
 });});
-  const neck=new THREE.Mesh(new THREE.SphereGeometry(1,40,20),hm);neck.scale.set(54,44,64);neck.position.set(0,0,8);head.add(neck);
+  const neck=new THREE.Mesh(new THREE.SphereGeometry(1,40,20),hm);neck.scale.set(54,44,52);neck.position.set(0,0,-46);head.add(neck);
   // agallas
   const gillM=new THREE.MeshBasicMaterial({color:0x140808});
   [-1,1].forEach(sx=>{for(let k=0;k<5;k++){const z=-6-k*9,y=-4,x=sx*Math.sqrt(Math.max(0,1-((z-8)/64)**2-(y/44)**2))*54*1.005;const gl=new THREE.Mesh(new THREE.PlaneGeometry(3,26-k*2),gillM);gl.position.set(x,y,z);gl.lookAt(x*2,y,z+x*0.2*sx);head.add(gl);}});
@@ -4300,8 +4309,13 @@ function makeSerpent(G){const NS=200,NR=32,sk=l3SkinTex(),skin=sk.map;G.skin=ski
   const lip=(ry,y,par,k)=>{const pts=[];for(let i=0;i<=40;i++){const a=(i/40-0.5)*Math.PI*1.04,ca=Math.cos(a);pts.push(new THREE.Vector3(Math.sin(a)*60*WX(ca)*k,y,62+ca*120*k));}par.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),80,ry,10,false),hm));};
   lip(5.5,0.5,jawP,0.97);lip(5,-7.5,top,0.95);
   const inner=new THREE.MeshBasicMaterial({color:0x050203,side:THREE.BackSide});
-  const mo=new THREE.Mesh(wedge(new THREE.SphereGeometry(1,24,12)),inner);mo.scale.set(40,14,70);mo.position.set(0,-4,40);head.add(mo);
-  const gum=new THREE.MeshPhongMaterial({color:0x22141a,shininess:70,specular:0x443338,side:THREE.DoubleSide});
+  const FT=l3FleshTex(),fleshM=(sd,rx,ry)=>{const m=new THREE.MeshPhongMaterial({map:rep(FT.map,rx,ry),emissiveMap:rep(FT.glow,rx,ry),emissive:0x2a8a78,color:0xffffff,shininess:90,specular:0x664448,side:sd});return m;};
+  const gum=fleshM(THREE.DoubleSide,2,2);
+  // garganta: un túnel de carne que va de la boca al cuello (se ve por dentro)
+  {const prof=[];for(let i=0;i<=16;i++){const t=i/16;prof.push(new THREE.Vector2(0.42+0.58*sstep(0,0.75,t),t));}const tg2=new THREE.LatheGeometry(prof,36);tg2.rotateX(Math.PI/2);
+    const th2=new THREE.Mesh(tg2,fleshM(THREE.BackSide,3,2));th2.scale.set(52,24,96);th2.position.set(0,-4,-14);head.add(th2);}
+  // pliegues de piel en el cuello: unen la cabeza con el cuerpo
+  for(let k=0;k<4;k++){const f=new THREE.Mesh(new THREE.TorusGeometry(1,0.07,10,48),hm);f.scale.set(55-k*1.5,46-k,1);f.position.set(0,-1,-8-k*13);head.add(f);}
   const tongue=new THREE.Mesh(wedge(new THREE.SphereGeometry(1,20,10)),gum);tongue.scale.set(22,5,64);tongue.position.set(0,3,52);jawP.add(tongue);
   // piso de la boca (sobre la mandíbula) y paladar (bajo el cráneo): sin esto, al abrir se veía a través
   const plate=(sx,sz)=>{const g=new THREE.CircleGeometry(1,48);g.rotateX(-Math.PI/2);const pp=g.attributes.position;for(let q=0;q<pp.count;q++){const z=pp.getZ(q);if(z>0)pp.setX(q,pp.getX(q)*(1-0.5*z));}g.computeVertexNormals();g.scale(sx,1,sz);return g;};
@@ -4339,7 +4353,12 @@ function makeSerpent(G){const NS=200,NR=32,sk=l3SkinTex(),skin=sk.map;G.skin=ski
   head.traverse(o=>{if(o.isMesh){o.frustumCulled=false;o.castShadow=false;}});
   // espuma y rocío donde atraviesa el agua
   const spr=[];for(let i=0;i<56;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW_TEX,color:0xe8eef0,transparent:true,opacity:0,depthWrite:false,fog:true}));s.visible=false;G.group.add(s);spr.push({s,life:0,vx:0,vy:0,vz:0,sz:1});}
-  G.ser={body,geo,pos,NS,NR,head,top,jawP,eyes,spr,sprK:0,ev:null,fins,fpos,fgeo,NF,NL,tent,K};
+  // esófago: sigue por dentro del cuerpo y se cierra en la oscuridad
+  const NGg=26,NRg=18,gpos=new Float32Array(NGg*(NRg+1)*3),guv=new Float32Array(NGg*(NRg+1)*2),gidx=[];for(let i=0;i<NGg;i++)for(let j=0;j<=NRg;j++){guv[(i*(NRg+1)+j)*2]=j/NRg*3;guv[(i*(NRg+1)+j)*2+1]=i/NGg*14;}
+  for(let i=0;i<NGg-1;i++)for(let j=0;j<NRg;j++){const a=i*(NRg+1)+j,b=a+1,c=a+NRg+1,d=c+1;gidx.push(a,c,b,b,c,d);}
+  const ggeo=new THREE.BufferGeometry();ggeo.setAttribute('position',new THREE.BufferAttribute(gpos,3));ggeo.setAttribute('uv',new THREE.BufferAttribute(guv,2));ggeo.setIndex(gidx);
+  const gullet=new THREE.Mesh(ggeo,fleshM(THREE.BackSide,1,1));gullet.frustumCulled=false;gullet.visible=false;G.group.add(gullet);
+  G.ser={body,geo,pos,NS,NR,head,top,jawP,eyes,spr,sprK:0,ev:null,fins,fpos,fgeo,NF,NL,tent,K,gullet,ggeo,gpos,NGg,NRg};
   // trayectoria del salto: parábola en un plano a un costado de la balsa
   const H=1250,U=950;G.ser.jumpT=l3PathTable(u=>[u,H*(1-(u/U)*(u/U))],-2800,2800,6);
   const JT=G.ser.jumpT,sStart=l3SFind(JT,(a,b)=>a[1]<-700&&b[1]>=-700),sExit=l3SFind(JT,(a,b)=>a[1]<0&&b[1]>=0),sEntry=l3SFind(JT,(a,b)=>a[0]>0&&a[1]>=0&&b[1]<0);
@@ -4360,7 +4379,10 @@ function l3PoseSerpent(G,ev,sH,jaw){const Z=G.ser,NS=Z.NS,NR=Z.NR,pos=Z.pos,ds=L
     const f=i/(NS-1),r=L3.SRAD*(f<0.025?0.9+0.1*f/0.025:f<0.1?1+0.08*sstep(0.025,0.1,f):f<0.5?1.08:1.08-1.0*sstep(0.5,1,f))*(1+0.025*Math.sin(i*0.7)*Math.sin(i*0.13));
     for(let j=0;j<=NR;j++){const a=j/NR*Math.PI*2-Math.PI/2,ca=Math.cos(a),sa=Math.sin(a),rr=r*(1+0.16*Math.pow(Math.max(0,sa),10)-0.08*Math.pow(Math.max(0,-sa),2)),k=(i*(NR+1)+j)*3;
       pos[k]=_sP.x+(_sX.x*ca*1.06+_sB.x*sa*0.9)*rr;pos[k+1]=_sP.y+(_sX.y*ca*1.06+_sB.y*sa*0.9)*rr;pos[k+2]=_sP.z+(_sX.z*ca*1.06+_sB.z*sa*0.9)*rr;}
-    if(i===0){_sM.makeBasis(_sX,_sB,_sT);Z.head.quaternion.setFromRotationMatrix(_sM);Z.head.position.copy(_sP);}}
+    if(i===0){_sM.makeBasis(_sX,_sB,_sT);Z.head.quaternion.setFromRotationMatrix(_sM);Z.head.position.copy(_sP);}
+    if(i<Z.NGg){const gp=Z.gpos,NRg=Z.NRg,f2=i/(Z.NGg-1),rg=L3.SRAD*0.42*(1-sstep(0.6,1,f2)*0.97);for(let j=0;j<=NRg;j++){const a=j/NRg*Math.PI*2,ca=Math.cos(a),sa=Math.sin(a),k=(i*(NRg+1)+j)*3;
+      gp[k]=_sP.x+(_sX.x*ca*1.15+_sB.x*sa*0.6)*rg-_sB.x*L3.SRAD*0.1;gp[k+1]=_sP.y+(_sX.y*ca*1.15+_sB.y*sa*0.6)*rg-_sB.y*L3.SRAD*0.1;gp[k+2]=_sP.z+(_sX.z*ca*1.15+_sB.z*sa*0.6)*rg-_sB.z*L3.SRAD*0.1;}}}
+  Z.ggeo.attributes.position.needsUpdate=true;Z.ggeo.computeVertexNormals();Z.ggeo.computeBoundingSphere();Z.gullet.visible=true;
   Z.geo.attributes.position.needsUpdate=true;Z.geo.computeVertexNormals();Z.geo.computeBoundingSphere();
   {const F=Z.fpos;let n=0;
     const tri=(i,j,i2,h,back)=>{if(i2>=NS)return;const a=(i*(NR+1)+j)*3,b=(i2*(NR+1)+j)*3,ci=(i*(NR+1))*3,cj=(i*(NR+1)+NR/2)*3;
@@ -4376,7 +4398,7 @@ function l3PoseSerpent(G,ev,sH,jaw){const Z=G.ser,NS=Z.NS,NR=Z.NR,pos=Z.pos,ds=L
   for(const t of Z.tent){t.pv.rotation.x=0.18*Math.sin(S.t*0.9+t.ph)+(jaw||0)*0.4;t.pv.rotation.z=0.12*Math.sin(S.t*0.7+t.ph*1.3);}
   // los ojos te siguen
   Z.head.updateMatrixWorld(true);for(const e of Z.eyes){e.g.worldToLocal(_sQ.copy(camera.position));_sQ.normalize();e.pup.position.x=clamp(_sQ.x,-0.8,0.8)*e.r*0.3;e.pup.position.y=clamp(_sQ.y,-0.8,0.8)*e.r*0.1;}}
-function l3HideSerpent(G){const Z=G.ser;Z.body.visible=Z.head.visible=Z.fins.visible=false;}
+function l3HideSerpent(G){const Z=G.ser;Z.body.visible=Z.head.visible=Z.fins.visible=Z.gullet.visible=false;}
 // ----- criaturas que merodean el trayecto -----
 function l3EelTex(){const c=mk(256,128),g=c.getContext('2d'),R=rng(611);g.fillStyle='#2f3836';g.fillRect(0,0,256,128);
   const bl=g.createLinearGradient(0,128,0,0);bl.addColorStop(0,'rgba(170,165,140,.9)');bl.addColorStop(0.2,'rgba(0,0,0,0)');bl.addColorStop(0.8,'rgba(0,0,0,0)');bl.addColorStop(1,'rgba(170,165,140,.9)');g.fillStyle=bl;g.fillRect(0,0,256,128);
