@@ -4295,10 +4295,13 @@ function makeSerpent(G){const NS=200,NR=32,sk=l3SkinTex(),skin=sk.map;G.skin=ski
   const gillM=new THREE.MeshBasicMaterial({color:0x140808});
   [-1,1].forEach(sx=>{for(let k=0;k<5;k++){const z=-6-k*9,y=-4,x=sx*Math.sqrt(Math.max(0,1-((z-8)/64)**2-(y/44)**2))*54*1.005;const gl=new THREE.Mesh(new THREE.PlaneGeometry(3,26-k*2),gillM);gl.position.set(x,y,z);gl.lookAt(x*2,y,z+x*0.2*sx);head.add(gl);}});
   const jawP=new THREE.Group();jawP.position.set(0,-4,0);head.add(jawP);
-  const jaw=new THREE.Mesh(wedge(new THREE.SphereGeometry(1,48,18,0,Math.PI*2,Math.PI*0.5,Math.PI*0.5)),hm);jaw.scale.set(60,34,120);jaw.position.set(0,0,62);jawP.add(jaw);
+  const jaw=new THREE.Mesh(wedge(new THREE.SphereGeometry(1,48,18,0,Math.PI*2,Math.PI*0.5,Math.PI*0.5)),hm);jaw.scale.set(62,52,122);jaw.position.set(0,0,62);jawP.add(jaw);
+  // labios: un borde grueso de piel alrededor de la mandíbula y bajo el cráneo, para que la boca se lea como boca
+  const lip=(ry,y,par,k)=>{const pts=[];for(let i=0;i<=40;i++){const a=(i/40-0.5)*Math.PI*1.04,ca=Math.cos(a);pts.push(new THREE.Vector3(Math.sin(a)*60*WX(ca)*k,y,62+ca*120*k));}par.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),80,ry,10,false),hm));};
+  lip(5.5,0.5,jawP,0.97);lip(5,-7.5,top,0.95);
   const inner=new THREE.MeshBasicMaterial({color:0x050203,side:THREE.BackSide});
-  const mo=new THREE.Mesh(wedge(new THREE.SphereGeometry(1,24,12)),inner);mo.scale.set(58,24,112);mo.position.set(0,-2,64);head.add(mo);
-  const gum=new THREE.MeshPhongMaterial({color:0x2e1a1e,shininess:70,specular:0x443338,side:THREE.DoubleSide});
+  const mo=new THREE.Mesh(wedge(new THREE.SphereGeometry(1,24,12)),inner);mo.scale.set(40,14,70);mo.position.set(0,-4,40);head.add(mo);
+  const gum=new THREE.MeshPhongMaterial({color:0x22141a,shininess:70,specular:0x443338,side:THREE.DoubleSide});
   const tongue=new THREE.Mesh(wedge(new THREE.SphereGeometry(1,20,10)),gum);tongue.scale.set(22,5,64);tongue.position.set(0,3,52);jawP.add(tongue);
   // piso de la boca (sobre la mandíbula) y paladar (bajo el cráneo): sin esto, al abrir se veía a través
   const plate=(sx,sz)=>{const g=new THREE.CircleGeometry(1,48);g.rotateX(-Math.PI/2);const pp=g.attributes.position;for(let q=0;q<pp.count;q++){const z=pp.getZ(q);if(z>0)pp.setX(q,pp.getX(q)*(1-0.5*z));}g.computeVertexNormals();g.scale(sx,1,sz);return g;};
@@ -4616,7 +4619,7 @@ function l3SerpentTick(G,dt,mr,a){const Z=G.ser;
   // ataque de frente: aparece adelante de la balsa y se la traga
   const te=a-L3.SWALLOW;
   if(te>=0&&te<Z.eatHitT+30){const zr=L3.DOCK+l3Dist(L3.SWALLOW+Z.eatHitT);const ev=Z.evE||(Z.evE={T:Z.eatT,N:new THREE.Vector3(-1,0,0),map:null});ev.map=(u,v,o)=>o.set(mr.x,L3.SEA+v,zr+u);
-    const sH=Z.eStart+te*Z.eatSpd;l3PathAt(Z.eatT,sH,_sv);const w=_sv[0],jaw=1.0*sstep(1900,900,w);l3PoseSerpent(G,ev,sH,jaw);
+    const sH=Z.eStart+te*Z.eatSpd;l3PathAt(Z.eatT,sH,_sv);const w=_sv[0],jaw=0.8*sstep(1900,900,w);l3PoseSerpent(G,ev,sH,jaw);
     const key=rr.id,dH=Math.hypot(P.x-mr.x,P.z-zr-w);
     if(w<1900&&G.ex!==key){G.ex=key;tone(28,0,10,0.36,'sawtooth');tone(41,0.4,9,0.25,'sawtooth');tone(19,0.8,10,0.3,'sine');noiseBurst(8,120,0.3);l3AddWave(mr.x,zr+1100,14);}
     if(w<1100&&w>200&&Math.random()<dt*6)l3Spray(G,mr.x+(Math.random()-0.5)*260,zr+w-150,1,1.4);
