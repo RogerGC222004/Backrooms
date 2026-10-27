@@ -35,6 +35,13 @@ html,body{height:100%;margin:0;background:var(--void);color:var(--paper);overflo
 .screen{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:flex-start;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;gap:28px;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px));padding-block:calc(70px + env(safe-area-inset-top,0px)) calc(70px + env(safe-area-inset-bottom,0px));background:linear-gradient(75deg,rgba(8,7,3,.92) 0%,rgba(8,7,3,.55) 42%,rgba(8,7,3,0) 75%)}
 .screen>:first-child{margin-top:auto}
 #pause>.box{margin-block:auto}
+#testScr>.box{margin-block:auto;max-width:520px}
+.testNote{font-size:15px;color:var(--dim);margin:6px 0 12px;line-height:1.4}
+.testRow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.testRow button,.testRow input{font:inherit;font-size:18px;padding:8px 14px;border-radius:6px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:inherit;cursor:pointer}
+.testRow input{width:90px;cursor:text}
+.testRow button:hover,.testRow button:focus-visible{border-color:var(--amber);color:var(--amber)}
+.testRow label{font-size:18px}
 .title{margin:0;font-family:var(--f-vhs);font-weight:400;font-size:clamp(68px,13vw,168px);line-height:.82;letter-spacing:.04em;color:var(--paper);text-shadow:3px 0 rgba(255,50,30,.55),-3px 0 rgba(40,190,255,.45),0 0 30px rgba(242,201,76,.25);text-wrap:balance}
 .kicker{margin:0;font-family:var(--f-vhs);font-size:clamp(20px,2.4vw,26px);letter-spacing:.18em;color:var(--dim);text-transform:uppercase}
 .menu{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin:0;padding:0;list-style:none}
@@ -392,8 +399,21 @@ html,body{height:100%;margin:0;background:var(--void);color:var(--paper);overflo
     <ul class="menu">
       <li><button id="btnResume" type="button">Continuar</button></li>
       <li><button id="btnOpts2" type="button">Opciones</button></li>
+      <li><button id="btnTest" type="button">Modo prueba</button></li>
       <li><button id="btnQuit" type="button">Menú principal</button></li>
     </ul>
+  </div>
+</section>
+
+<section class="screen" id="testScr" hidden>
+  <div class="box">
+    <h2>MODO PRUEBA</h2>
+    <p class="testNote">Viaja directo a cualquier piso para probarlo. Mientras lo uses, la partida no se guarda.</p>
+    <div class="testRow"><button type="button" class="tq" data-f="-1">-1</button><button type="button" class="tq" data-f="0">0</button><button type="button" class="tq" data-f="1">1</button><button type="button" class="tq" data-f="2">2</button><button type="button" class="tq" data-f="3">3</button></div>
+    <div class="testRow"><label for="testFloor">Piso</label><input id="testFloor" type="number" step="1" value="3"><button type="button" id="testGo">Ir</button></div>
+    <div class="testRow"><button type="button" id="testSkip">Nivel 3: adelantar 1 minuto</button></div>
+    <p class="testNote" id="testMsg"></p>
+    <ul class="menu"><li><button id="testBack" type="button">Volver</button></li></ul>
   </div>
 </section>
 
@@ -4573,7 +4593,7 @@ function updateElev(dt){
   else if(S.elev==='moving'){S.moveT+=dt;
     if(S.moveT>=S.moveDur){S.floor=S.target;buildRoom(S.floor);if(S.reviveArm)setTimeout(coopRevive,600);if(S.drag&&S.dragPos){S.dragPos={x:P.x+Math.sin(P.yaw)*1.1,y:0,z:P.z+Math.cos(P.yaw)*1.1,fl:S.target};}motorStop();ding();
       [btnUp,btnDn].forEach(b=>{b.material.map=b.userData.dir>0?BT.up:BT.dn;b.material.needsUpdate=true;});if(MP.on&&S.state==='play'){P.y=0;P.vy=0;}
-      $('#floorTag').textContent='PISO '+S.floor;card(S.floor);S.elev='opening';saveGame();
+      $('#floorTag').textContent='PISO '+S.floor+(S.test?' · PRUEBA':'');card(S.floor);S.elev='opening';saveGame();
       if(noPower()){setTimeout(()=>{S.powerFlick=1.4;noiseBurst(0.5,300,0.12);},1800);setTimeout(()=>{tone(220,0,.6,.1,'sawtooth');tone(110,.2,.8,.12,'sine');toast('El elevador se quedó sin energía');},3300);}S.warm=2;S.doorTarget=0;}}
   else if(S.elev==='opening'&&S.warm>0){warmStep(S.warm);S.warm--;if(!S.warm){S.doorTarget=1;setTimeout(()=>noiseBurst(1.2,700,.08),150);}}
   else if(S.elev==='opening'&&S.doorOpen>=1)S.elev='idle';
@@ -4809,7 +4829,7 @@ function flicker(dt){if(!room)return;for(const L of room.lights){if(!L.flick)con
   const k=L.on?1:0.12;if(L.light)L.light.intensity=L.base*k;L.mats.forEach(m=>m.color.setScalar(L.on?1:0.25));}}
 
 /* ---------- Pantallas y flujo ---------- */
-const screens=['#menu','#options','#keysScr','#pause','#over','#slotsScr','#profileScr','#modeScr'];
+const screens=['#menu','#options','#keysScr','#pause','#over','#slotsScr','#profileScr','#modeScr','#testScr'];
 function show(id){screens.forEach(s=>$(s).hidden=s!==id);}
 function fadeIn(){const f=$('#fade');f.classList.add('on');requestAnimationFrame(()=>requestAnimationFrame(()=>f.classList.remove('on')));}
 function lock(){if(isTouch)return;try{const p=cv.requestPointerLock();if(p&&p.catch)p.catch(()=>{});}catch(e){}}
@@ -4819,7 +4839,7 @@ function startGame(slot,d,mpw){setRun(false);
   if(slot!=null)S.slot=slot;const run=S.run=(S.run||0)+1;
   initAudio();lock();show(null);$('#hud').hidden=false;
   INV.hot.fill(null);INV.bag.fill(null);INV.chest.fill(null);S.chestOpen=false;S.myChest=null;INV.sel=0;INV.pick=null;S.taken={};
-  resetFade();S.deadLamps=new Set();S.runT=null;S.stepT=null;S.lastScare=null;Object.assign(S,{climb:null,stam:1,tired:false,san:1,roll:0,alive:0,flashOn:true,drinkT:0,reading:false,power1:false,grateOpen:false,flashBat:100,flashBat2:0,flashBat3:0,duckNear:0,duckFreeze:0,whistleCd:0,powerFlick:0,barT:0,chalk:10,marks:[],fuses:{},crHitCd:0,noiseT:0,power2:false,grab:null,deathKind:null,hook:null,feRide:null,feKey:'',body:null,drag:null,dragPos:null,reviveArm:false,coop:null,l3wake:null});S.l3runs=[];$('#hook').hidden=true;$('#fade').style.background='';FLARES.splice(0).forEach(F=>{scene.remove(F.m);disposeGroup(F.m);});VM.na=null;exitScope();EBOX.target=0;EBOX.open=0;$('#note').hidden=true;
+  resetFade();S.deadLamps=new Set();S.runT=null;S.stepT=null;S.lastScare=null;Object.assign(S,{climb:null,stam:1,tired:false,san:1,roll:0,alive:0,flashOn:true,drinkT:0,reading:false,power1:false,grateOpen:false,flashBat:100,flashBat2:0,flashBat3:0,duckNear:0,duckFreeze:0,whistleCd:0,powerFlick:0,barT:0,chalk:10,marks:[],fuses:{},crHitCd:0,noiseT:0,power2:false,grab:null,deathKind:null,hook:null,feRide:null,feKey:'',body:null,drag:null,dragPos:null,reviveArm:false,coop:null,l3wake:null,test:false});S.l3runs=[];$('#hook').hidden=true;$('#fade').style.background='';FLARES.splice(0).forEach(F=>{scene.remove(F.m);disposeGroup(F.m);});VM.na=null;exitScope();EBOX.target=0;EBOX.open=0;$('#note').hidden=true;
   let f=0;Object.assign(P,{x:0,z:-1.2,y:0,vy:0,yaw:Math.PI,pitch:-0.04});S.duckSave=null;
   if(d){f=d.floor|0;d.hot.forEach((v,i)=>INV.hot[i]=ITEMS[v]?v:null);d.bag.forEach((v,i)=>{if(i<20)INV.bag[i]=ITEMS[v]?v:null;});if(Array.isArray(d.chest))d.chest.forEach((v,i)=>{if(i<300)INV.chest[i]=ITEMS[v]?v:null;});INV.sel=d.sel|0;
     S.taken=d.taken||{};Object.assign(S,{stam:d.stam,san:d.san,alive:d.alive,flashOn:d.flashOn!==false,power1:!!d.power1,grateOpen:!!d.grate,flashBat:d.bat==null?100:d.bat,flashBat2:d.bat2||0,flashBat3:d.bat3||0});S.deadLamps=new Set(d.dead||[]);S.chalk=d.chalk>0?d.chalk:10;S.fuses=d.fuses&&typeof d.fuses==='object'?d.fuses:{};S.power2=!!d.power2;S.marks=Array.isArray(d.marks)?d.marks.filter(m=>m&&Array.isArray(m.p)&&Array.isArray(m.n)&&Array.isArray(m.u)):[];Object.assign(P,{x:d.x,z:d.z,y:d.y||0,yaw:d.yaw,pitch:0});S.duckSave=d.duck||null;}
@@ -4840,7 +4860,7 @@ function startGame(slot,d,mpw){setRun(false);
 const SAVE_KEY='backrooms-saves';let memSaves=[null,null,null];
 function loadSaves(){try{const v=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(Array.isArray(v)&&v.length===3)return v;}catch(e){}return memSaves.slice();}
 function storeSaves(a){memSaves=a.slice();try{localStorage.setItem(SAVE_KEY,JSON.stringify(a));}catch(e){}}
-function saveGame(){if(S.slot==null||!(S.state==='play'||S.state==='pause'))return;const a=loadSaves();
+function saveGame(){if(S.test||S.slot==null||!(S.state==='play'||S.state==='pause'))return;const a=loadSaves();
   if(MP.on&&!MP.host){const b=a[S.slot]||{floor:0,x:0,z:-1.2,yaw:Math.PI,y:0,seed:((Math.random()*2e9)|0)+1,taken:{},dead:[],power1:false,grate:false};
     Object.assign(b,{stam:S.stam,san:S.san,alive:S.alive,flashOn:S.flashOn,hot:INV.hot.slice(),bag:INV.bag.slice(),chest:(MP.on&&!MP.host&&S.myChest?S.myChest:INV.chest).slice(),sel:INV.sel,bat:S.flashBat,bat2:S.flashBat2||0,bat3:S.flashBat3||0,chalk:S.chalk,at:Date.now()});a[S.slot]=b;storeSaves(a);return;}
   a[S.slot]={floor:S.floor,x:P.x,z:P.z,yaw:P.yaw,stam:S.stam,san:S.san,alive:S.alive,flashOn:S.flashOn,hot:INV.hot.slice(),bag:INV.bag.slice(),chest:(MP.on&&!MP.host&&S.myChest?S.myChest:INV.chest).slice(),sel:INV.sel,taken:S.taken,seed:S.seed,y:P.y,power1:!!S.power1,grate:!!S.grateOpen,bat:S.flashBat,bat2:S.flashBat2||0,bat3:S.flashBat3||0,fuses:S.fuses||{},power2:!!S.power2,chalk:S.chalk,marks:S.marks.slice(-120).map(m=>({f:m.f,p:m.p,n:m.n,u:m.u,id:m.id})),dead:[...S.deadLamps].slice(-400),duck:(room&&room.lvl1&&room.duck)?{x:room.duck.x,y:room.duck.y,z:room.duck.z}:S.duckSave,at:Date.now()};storeSaves(a);}
@@ -4918,6 +4938,22 @@ $('#btnKeys').onclick=()=>show('#keysScr');
 $('#keysBack').onclick=()=>show('#menu');
 $('#optBack').onclick=()=>show(S.from==='pause'?'#pause':'#menu');
 $('#btnResume').onclick=resume;
+// ---------- modo prueba: viajar directo a un piso (solo jugando solo, sin guardar) ----------
+function testMsg(t){$('#testMsg').textContent=t||'';}
+$('#btnTest').onclick=()=>{testMsg(MP.on?'El modo prueba solo funciona jugando solo.':'');show('#testScr');};
+$('#testBack').onclick=()=>show('#pause');
+function testGo(f){if(MP.on){testMsg('El modo prueba solo funciona jugando solo.');return;}
+  f=Math.round(+f);if(!Number.isFinite(f)||f<MINF||f>MAXF){testMsg('Escribe un piso entre '+MINF+' y '+MAXF+'.');return;}
+  closeInv(false);closeNote(false);exitScope();motorStop();S.test=true;
+  Object.assign(S,{l3wake:null,grab:null,hook:null,climb:null,swim:false,feRide:null,drag:null,dragPos:null,scareShake:0});resetFade();$('#under').hidden=true;
+  S.floor=f;S.target=f;S.dir=0;S.lastDisp='';S.doorOpen=0;S.doorTarget=0;buildRoom(f);
+  Object.assign(P,{x:0,z:-1.2,y:0,vy:0,yaw:Math.PI,pitch:-0.04});S.camY=1.6;
+  S.elev='opening';S.warm=2;ding();$('#floorTag').textContent='PISO '+f+' · PRUEBA';card(f);resume();}
+document.querySelectorAll('#testScr .tq').forEach(b=>b.onclick=()=>testGo(b.dataset.f));
+$('#testGo').onclick=()=>testGo($('#testFloor').value);
+$('#testFloor').onkeydown=e=>{e.stopPropagation();if(e.key==='Enter')testGo($('#testFloor').value);};
+$('#testSkip').onclick=()=>{if(MP.on){testMsg('El modo prueba solo funciona jugando solo.');return;}if(S.floor!==3||!S.l3runs.length){testMsg('Primero súbete a la balsa en el nivel 3.');return;}
+  S.test=true;S.l3runs.forEach(r=>r.t0-=60000);const a=Math.max(...S.l3runs.map(l3Age));testMsg('La balsa lleva '+Math.floor(a/60)+' min '+Math.round(a%60)+' s navegando.');};
 $('#btnQuit').onclick=toMenu;
 $('#pauseBtn').onclick=e=>{e.stopPropagation();if(S.editing)return;unlock();pause();};
 
