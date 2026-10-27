@@ -4337,10 +4337,10 @@ function l3EelTex(){const c=mk(256,128),g=c.getContext('2d'),R=rng(611);g.fillSt
   for(let i=0;i<70;i++){g.fillStyle='rgba(8,10,10,'+(0.3+R()*0.4)+')';g.beginPath();g.ellipse(R()*256,32+R()*64,3+R()*9,2+R()*5,R()*3,0,7);g.fill();}
   for(let i=0;i<20;i++){g.strokeStyle='rgba(200,190,170,.25)';g.lineWidth=1+R();g.beginPath();const x=R()*256,y=R()*128;g.moveTo(x,y);g.lineTo(x+(R()-0.5)*40,y+(R()-0.5)*10);g.stroke();}
   noise(g,256,128,14);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;}
-function l3PaleTex(){const c=mk(256,256),g=c.getContext('2d'),R=rng(733);g.fillStyle='#b8b4a8';g.fillRect(0,0,256,256);
+function l3PaleTex(ribs){const c=mk(256,256),g=c.getContext('2d'),R=rng(733);g.fillStyle='#b8b4a8';g.fillRect(0,0,256,256);
   for(let i=0;i<140;i++){const x=R()*256,y=R()*256,r=6+R()*26,gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,R()<0.5?'rgba(90,100,96,.35)':'rgba(120,80,80,.25)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(x-r,y-r,2*r,2*r);}
   // costillas marcadas y venas
-  for(let y=40;y<200;y+=13){g.strokeStyle='rgba(60,58,52,.45)';g.lineWidth=3;g.beginPath();g.moveTo(20,y);g.quadraticCurveTo(128,y+18,236,y);g.stroke();g.strokeStyle='rgba(235,232,222,.35)';g.lineWidth=2;g.beginPath();g.moveTo(20,y-4);g.quadraticCurveTo(128,y+14,236,y-4);g.stroke();}
+  if(ribs)for(let y=40;y<200;y+=13){g.strokeStyle='rgba(60,58,52,.45)';g.lineWidth=3;g.beginPath();g.moveTo(20,y);g.quadraticCurveTo(128,y+18,236,y);g.stroke();g.strokeStyle='rgba(235,232,222,.35)';g.lineWidth=2;g.beginPath();g.moveTo(20,y-4);g.quadraticCurveTo(128,y+14,236,y-4);g.stroke();}
   for(let i=0;i<30;i++){let x=R()*256,y=R()*256,a=R()*6.28;g.strokeStyle='rgba(70,80,110,.3)';g.lineWidth=1;g.beginPath();g.moveTo(x,y);for(let k=0;k<12;k++){a+=(R()-0.5)*0.8;x+=Math.cos(a)*5;y+=Math.sin(a)*5;g.lineTo(x,y);}g.stroke();}
   noise(g,256,256,16);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;}
 function l3FaunaBuild(G){const F={grp:new THREE.Group(),mer:[],hum:[],med:[],sunk:{}};G.group.add(F.grp);G.fauna=F;
@@ -4348,7 +4348,7 @@ function l3FaunaBuild(G){const F={grp:new THREE.Group(),mer:[],hum:[],med:[],sun
   const eelM=new THREE.MeshPhongMaterial({map:l3EelTex(),color:0xb0b8b4,shininess:50,specular:0x334040}),finM=new THREE.MeshPhongMaterial({color:0x232b2a,side:THREE.DoubleSide,shininess:30}),
     toothM=new THREE.MeshLambertMaterial({color:0xd8d0b8}),sg=new THREE.SphereGeometry(1,16,12),eyeM=new THREE.MeshBasicMaterial({color:0xd8f0d0,fog:false});
   for(let m=0;m<4;m++){const segs=[],N=12,L=22+m*4;
-    for(let k=0;k<N;k++){const f=k/(N-1),r=(f<0.12?1.3+f*5:2.2-1.9*sstep(0.25,1,f))*(L/26);const s=new THREE.Mesh(sg,eelM);s.scale.set(r,r*0.85,L/N*0.85);s.visible=false;F.grp.add(s);segs.push(s);}
+    for(let k=0;k<N;k++){const f=k/(N-1),r=(f<0.12?1.3+f*5:2.2-1.9*sstep(0.25,1,f))*(L/26);const s=new THREE.Mesh(sg,eelM);s.scale.set(r,r*0.85,Math.max(L/N*1.25,r*1.6));s.visible=false;F.grp.add(s);segs.push(s);}
     const h=segs[0];
     // cabeza: hocico largo, dientes hacia afuera y cuatro ojos pálidos
     const sn=new THREE.Mesh(sg,eelM);sn.position.set(0,-0.1,0.9);sn.scale.set(0.6,0.45,1.1);h.add(sn);
@@ -4360,12 +4360,12 @@ function l3FaunaBuild(G){const F={grp:new THREE.Group(),mer:[],hum:[],med:[],sun
     [-1,1].forEach(sx=>{const p=new THREE.Mesh(new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute([0,0,0.4, sx*2.2,-0.6,-0.8, 0,0,-0.6],3)),finM);p.geometry.computeVertexNormals();segs[2].add(p);});
     F.mer.push({segs,N,L,R0:42+m*26,w:(m%2?-1:1)*(0.07+m*0.012),th:m*1.7,T:13+m*3.4,ph:m*3.1,was:false});}
   // los que esperan: figuras humanas altísimas y flacas, con el agua a la cintura, que te siguen con la cara
-  const pale=new THREE.MeshPhongMaterial({map:l3PaleTex(),color:0x8e968e,shininess:60,specular:0x3a4040}),dark=new THREE.MeshBasicMaterial({color:0x050404}),hairM=new THREE.MeshLambertMaterial({color:0x0c0b0a,side:THREE.DoubleSide});
+  const pale=new THREE.MeshPhongMaterial({map:l3PaleTex(false),color:0x8e968e,shininess:60,specular:0x3a4040}),ribM=new THREE.MeshPhongMaterial({map:l3PaleTex(true),color:0x8e968e,shininess:60,specular:0x3a4040}),dark=new THREE.MeshBasicMaterial({color:0x050404}),hairM=new THREE.MeshLambertMaterial({color:0x0c0b0a,side:THREE.DoubleSide});
   const cap=(r,l)=>{const g=new THREE.CylinderGeometry(r,r*0.8,l,10);g.translate(0,-l/2,0);return g;};
   for(let m=0;m<6;m++){const root=new THREE.Group();root.visible=false;F.grp.add(root);
     // torso flaco con costillas, hombros huesudos, cuello largo y cabeza ladeada
-    const torso=new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.2,1.7,14),pale);torso.position.y=0.55;root.add(torso);
-    const chest=new THREE.Mesh(new THREE.SphereGeometry(1,16,12),pale);chest.scale.set(0.42,0.5,0.26);chest.position.y=1.15;root.add(chest);
+    const torso=new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.2,1.7,14),ribM);torso.position.y=0.55;root.add(torso);
+    const chest=new THREE.Mesh(new THREE.SphereGeometry(1,16,12),ribM);chest.scale.set(0.42,0.5,0.26);chest.position.y=1.15;root.add(chest);
     [-1,1].forEach(sx=>{const sh=new THREE.Mesh(new THREE.SphereGeometry(0.15,10,8),pale);sh.position.set(sx*0.5,1.5,0);root.add(sh);const cl=new THREE.Mesh(cap(0.05,0.5),pale);cl.position.set(sx*0.05,1.52,0.08);cl.rotation.z=sx*1.35;root.add(cl);});
     const neck=new THREE.Mesh(cap(0.08,0.8),pale);neck.position.y=2.35;root.add(neck);
     const hd=new THREE.Group();hd.position.y=2.3;root.add(hd);
