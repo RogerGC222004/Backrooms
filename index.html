@@ -411,7 +411,7 @@ html,body{height:100%;margin:0;background:var(--void);color:var(--paper);overflo
     <p class="testNote">Viaja directo a cualquier piso para probarlo. Mientras lo uses, la partida no se guarda.</p>
     <div class="testRow"><button type="button" class="tq" data-f="-1">-1</button><button type="button" class="tq" data-f="0">0</button><button type="button" class="tq" data-f="1">1</button><button type="button" class="tq" data-f="2">2</button><button type="button" class="tq" data-f="3">3</button></div>
     <div class="testRow"><label for="testFloor">Piso</label><input id="testFloor" type="number" step="1" value="3"><button type="button" id="testGo">Ir</button></div>
-    <div class="testRow"><button type="button" id="testSkip">Nivel 3: adelantar 1 minuto</button></div>
+    <div class="testRow"><button type="button" id="testSkip">Nivel 3: adelantar 1 minuto (te sube a la balsa)</button></div>
     <p class="testNote" id="testMsg"></p>
     <ul class="menu"><li><button id="testBack" type="button">Volver</button></li></ul>
   </div>
@@ -4123,7 +4123,7 @@ function updateElevLights(){if(!ELB.length)return;const px=camera.position.x,pz=
   for(const bc of ELB){if(bc.m){bc.m.opacity=bc.base*fl;continue;}const k=Math.sin(S.t*2.2)>-0.2?1:0.55,d=Math.hypot(bc.s.position.x-px,bc.s.position.z-pz);
     const sc=bc.base*k*Math.max(1,d/28);bc.s.scale.set(sc,sc,1);if(bc.b)bc.b.material.color.setScalar(k>0.6?1:0.45);}}
 /* ---------- Nivel 3: el mar infinito, la balsa y la serpiente ---------- */
-const L3={SEA:-0.4,SPD:1.6,RW:3.4,RL:6.6,RC:1.35,TUBE:0.5,WAIT:8,EYES:60,BREACH:300,SWALLOW:600,ISX:0,ISZ:-9000,ISR:150,SLEN:3000,SRAD:50,REACH:300,SEE:3200};
+const L3={SEA:-0.4,SPD:1.6,RW:3.4,RL:6.6,RC:1.35,TUBE:0.5,WAIT:8,EYES:60,BREACH:180,SWALLOW:300,ISX:0,ISZ:-9000,ISR:150,SLEN:3000,SRAD:50,REACH:300,SEE:3200};
 L3.DOCK=SF+1.45+0.2+L3.RL/2;
 const L3B=[0,1,2,3].map(()=>new THREE.Vector4(0,0,0,0));   // olas gigantes: x, z, momento (reloj del agua), altura
 S.l3runs=[];
@@ -4952,8 +4952,14 @@ function testGo(f){if(MP.on){testMsg('El modo prueba solo funciona jugando solo.
 document.querySelectorAll('#testScr .tq').forEach(b=>b.onclick=()=>testGo(b.dataset.f));
 $('#testGo').onclick=()=>testGo($('#testFloor').value);
 $('#testFloor').onkeydown=e=>{e.stopPropagation();if(e.key==='Enter')testGo($('#testFloor').value);};
-$('#testSkip').onclick=()=>{if(MP.on){testMsg('El modo prueba solo funciona jugando solo.');return;}if(S.floor!==3||!S.l3runs.length){testMsg('Primero súbete a la balsa en el nivel 3.');return;}
-  S.test=true;S.l3runs.forEach(r=>r.t0-=60000);const a=Math.max(...S.l3runs.map(l3Age));testMsg('La balsa lleva '+Math.floor(a/60)+' min '+Math.round(a%60)+' s navegando.');};
+$('#testSkip').onclick=()=>{if(MP.on){testMsg('El modo prueba solo funciona jugando solo.');return;}if(S.floor!==3||!room||!room.l3){testMsg('Esto solo funciona en el nivel 3. Ve al piso 3 primero.');return;}
+  if(S.l3wake){testMsg('Espera a despertar en la isla.');return;}
+  S.test=true;
+  // si no hay balsa navegando, arranca una ya mismo; luego la adelanta 1 minuto y te pone encima
+  let run=S.l3runs.filter(r=>l3Age(r)<L3.SWALLOW).sort((a,b)=>b.t0-a.t0)[0];if(!run){run={id:Math.random().toString(36).slice(2,8),t0:l3Now()};S.l3runs.push(run);}
+  run.t0=Math.min(run.t0,l3Now())-60000;const a=l3Age(run),z=L3.DOCK+l3Dist(a);
+  Object.assign(P,{x:0.6,z:z-1,y:l3Surf(0,z)+0.35,vy:0});S.swim=false;S.camY=P.y+1.6;
+  resume();toast('Modo prueba: la balsa lleva '+Math.floor(a/60)+' min '+String(Math.round(a%60)).padStart(2,'0')+' s navegando');};
 $('#btnQuit').onclick=toMenu;
 $('#pauseBtn').onclick=e=>{e.stopPropagation();if(S.editing)return;unlock();pause();};
 
