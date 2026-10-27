@@ -4298,8 +4298,12 @@ function makeSerpent(G){const NS=200,NR=32,sk=l3SkinTex(),skin=sk.map;G.skin=ski
   const jaw=new THREE.Mesh(wedge(new THREE.SphereGeometry(1,48,18,0,Math.PI*2,Math.PI*0.5,Math.PI*0.5)),hm);jaw.scale.set(60,34,120);jaw.position.set(0,0,62);jawP.add(jaw);
   const inner=new THREE.MeshBasicMaterial({color:0x050203,side:THREE.BackSide});
   const mo=new THREE.Mesh(wedge(new THREE.SphereGeometry(1,24,12)),inner);mo.scale.set(58,24,112);mo.position.set(0,-2,64);head.add(mo);
-  const gum=new THREE.MeshPhongMaterial({color:0x4a1a1e,shininess:60,specular:0x553333});
-  const tongue=new THREE.Mesh(wedge(new THREE.SphereGeometry(1,20,10)),gum);tongue.scale.set(34,7,74);tongue.position.set(0,-5,54);jawP.add(tongue);
+  const gum=new THREE.MeshPhongMaterial({color:0x2e1a1e,shininess:70,specular:0x443338,side:THREE.DoubleSide});
+  const tongue=new THREE.Mesh(wedge(new THREE.SphereGeometry(1,20,10)),gum);tongue.scale.set(22,5,64);tongue.position.set(0,3,52);jawP.add(tongue);
+  // piso de la boca (sobre la mandíbula) y paladar (bajo el cráneo): sin esto, al abrir se veía a través
+  const plate=(sx,sz)=>{const g=new THREE.CircleGeometry(1,48);g.rotateX(-Math.PI/2);const pp=g.attributes.position;for(let q=0;q<pp.count;q++){const z=pp.getZ(q);if(z>0)pp.setX(q,pp.getX(q)*(1-0.5*z));}g.computeVertexNormals();g.scale(sx,1,sz);return g;};
+  const floorM=new THREE.Mesh(plate(57,117),gum);floorM.position.set(0,1.5,62);jawP.add(floorM);
+  const palM=new THREE.Mesh(plate(60,118),gum);palM.position.set(0,-6.5,62);top.add(palM);
   const tm=l3HalfFog(new THREE.MeshPhongMaterial({color:0xd8cfb2,shininess:60,specular:0x555044})),tg=new THREE.ConeGeometry(1,1,6);
   for(let row=0;row<2;row++)for(let i=0;i<36;i++){const a=(i/35-0.5)*Math.PI*0.98,ca=Math.cos(a),inn=row?0.84:0.93,zu=0.951*ca,
       x=0.951*Math.sin(a)*66*WX(zu)*inn,z=62+0.951*ca*124*inn,yr=2-28*0.309*(1-0.3*Math.max(0,zu)),L=(5+ca*6+((i*7919)%4))*(row?0.65:1);
@@ -4315,10 +4319,12 @@ function makeSerpent(G){const NS=200,NR=32,sk=l3SkinTex(),skin=sk.map;G.skin=ski
     const gl=glowSprite(0xffd870,r*3.6,false);gl.material.opacity=0.35;gl.position.z=r;eg.add(gl);
     const brow=new THREE.Mesh(new THREE.SphereGeometry(1,16,10),hm);brow.scale.set(r*1.9,r*0.35,r*0.6);brow.position.set(0,r*0.95,r*0.05);brow.rotation.x=-0.3;eg.add(brow);
     eyes.push({g:eg,pup,r,sx});});
-  // aletas de las mejillas
-  [-1,1].forEach(sx=>{const fr=new THREE.BufferGeometry(),fp=[];for(let k=0;k<6;k++){const a0=-0.3+k*0.3,a1=a0+0.3,R1=72+k*7;fp.push(sx*52,0,30, sx*(52+Math.cos(a0)*R1*0.5),Math.sin(a0)*R1*0.6,30-Math.cos(a0)*R1*0.8, sx*(52+Math.cos(a1)*R1*0.5),Math.sin(a1)*R1*0.6,30-Math.cos(a1)*R1*0.8);}
-    fr.setAttribute('position',new THREE.Float32BufferAttribute(fp,3));fr.computeVertexNormals();head.add(new THREE.Mesh(fr,l3HalfFog(new THREE.MeshLambertMaterial({color:0x34423f,side:THREE.DoubleSide,transparent:true,opacity:0.9}))));
-    for(let k=0;k<6;k++){const a=-0.3+k*0.3+0.15,R1=(76+k*7)*0.85,sp=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.8,R1,5),boneM);sp.position.set(sx*(52+Math.cos(a)*R1*0.25),Math.sin(a)*R1*0.3,30-Math.cos(a)*R1*0.4);sp.lookAt(sx*52,0,30);sp.rotateX(Math.PI/2);head.add(sp);}});
+  // aletas de las mejillas: membrana con borde festoneado y nervios finos del mismo tono
+  const frM=l3HalfFog(new THREE.MeshPhongMaterial({color:0x2c3a38,emissive:0x082a26,side:THREE.DoubleSide,transparent:true,opacity:0.88,shininess:40,specular:0x223333})),ribF=l3HalfFog(new THREE.MeshPhongMaterial({color:0x1a2422,shininess:30}));
+  [-1,1].forEach(sx=>{const fp=[],NK=7,O=new THREE.Vector3(sx*52,0,26);const edge=a=>{const R1=(62+12*Math.sin((a+0.35)/1.9*Math.PI))*(1-0.12*Math.abs(Math.sin(a*11)));return new THREE.Vector3(sx*(52+Math.cos(a)*R1*0.42),Math.sin(a)*R1*0.62,26-Math.cos(a)*R1*0.8);};
+    const A0=-0.35,A1=1.55,NS2=40;for(let k=0;k<NS2;k++){const a0=A0+(A1-A0)*k/NS2,a1=A0+(A1-A0)*(k+1)/NS2,p0=edge(a0),p1=edge(a1);fp.push(O.x,O.y,O.z,p0.x,p0.y,p0.z,p1.x,p1.y,p1.z);}
+    const fr=new THREE.BufferGeometry();fr.setAttribute('position',new THREE.Float32BufferAttribute(fp,3));fr.computeVertexNormals();head.add(new THREE.Mesh(fr,frM));
+    for(let k=0;k<NK;k++){const a=A0+(A1-A0)*(k+0.5)/NK,e=edge(a),pts=[O.clone(),O.clone().lerp(e,0.5).add(new THREE.Vector3(sx*2,0,0)),e.clone().lerp(O,0.08)];head.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),8,0.9,5,false),ribF));}});
   // barbas: tentáculos que cuelgan de la mandíbula y las mejillas
   const tent=[],tentM=l3HalfFog(new THREE.MeshPhongMaterial({color:0x5a5a50,shininess:40,specular:0x333330}));
   [[0,-20,120,jawP,90],[-14,-18,96,jawP,74],[14,-18,96,jawP,74],[-40,-12,70,jawP,60],[40,-12,70,jawP,60],[-60,-8,30,head,110],[60,-8,30,head,110],[-50,-14,10,head,80],[50,-14,10,head,80]].forEach(([x,y,z,par,L],i)=>{
@@ -4380,59 +4386,110 @@ function l3PaleTex(ribs){const c=mk(256,256),g=c.getContext('2d'),R=rng(733);g.f
   if(ribs)for(let y=40;y<200;y+=13){g.strokeStyle='rgba(60,58,52,.45)';g.lineWidth=3;g.beginPath();g.moveTo(20,y);g.quadraticCurveTo(128,y+18,236,y);g.stroke();g.strokeStyle='rgba(235,232,222,.35)';g.lineWidth=2;g.beginPath();g.moveTo(20,y-4);g.quadraticCurveTo(128,y+14,236,y-4);g.stroke();}
   for(let i=0;i<30;i++){let x=R()*256,y=R()*256,a=R()*6.28;g.strokeStyle='rgba(70,80,110,.3)';g.lineWidth=1;g.beginPath();g.moveTo(x,y);for(let k=0;k<12;k++){a+=(R()-0.5)*0.8;x+=Math.cos(a)*5;y+=Math.sin(a)*5;g.lineTo(x,y);}g.stroke();}
   noise(g,256,256,16);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;}
+function l3MedTex(){const c=mk(256,256),g=c.getContext('2d');g.fillStyle='#000';g.fillRect(0,0,256,256);
+  // canales radiales, anillos y manchas que brillan
+  for(let k=0;k<16;k++){const a=k/16*6.283;g.strokeStyle='rgba(170,255,240,.55)';g.lineWidth=k%2?1.5:3;g.beginPath();g.moveTo(128,128);for(let r=0;r<=128;r+=8)g.lineTo(128+Math.cos(a+Math.sin(r*0.05)*0.05)*r,128+Math.sin(a+Math.sin(r*0.05)*0.05)*r);g.stroke();}
+  for(const r of [30,62,96,120]){g.strokeStyle='rgba(140,230,255,'+(r>100?0.6:0.3)+')';g.lineWidth=r>100?4:2;g.beginPath();g.arc(128,128,r,0,7);g.stroke();}
+  const gr=g.createRadialGradient(128,128,0,128,128,40);gr.addColorStop(0,'rgba(220,255,250,.9)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(0,0,256,256);
+  for(let i=0;i<4;i++){const a=i/4*6.283+0.4;g.fillStyle='rgba(255,190,230,.7)';g.beginPath();g.ellipse(128+Math.cos(a)*26,128+Math.sin(a)*26,9,5,a,0,7);g.fill();}
+  return new THREE.CanvasTexture(c);}
+function l3EelBody(M){const N=M.N,NR=M.NR,RG=M.RG,pos=M.bpos,fp=M.fpos,nodes=M.segs;
+  // curva suave por los nodos del cuerpo
+  for(let k=0;k<N;k++)M.cpts[k].copy(nodes[k].position);M.curve.updateArcLengths();
+  const T=new THREE.Vector3(),B=new THREE.Vector3(),X=new THREE.Vector3(),up=new THREE.Vector3(0,1,0),p=new THREE.Vector3(),q=new THREE.Vector3();let fi=0;
+  for(let i=0;i<RG;i++){const f=i/(RG-1);M.curve.getPointAt(f,p);M.curve.getPointAt(Math.min(1,f+0.01),q);if(f>=0.99){M.curve.getPointAt(0.98,q);T.subVectors(p,q);}else T.subVectors(q,p);T.normalize();
+    X.crossVectors(up,T).normalize();B.crossVectors(T,X).normalize();
+    const s=M.L/26,r=s*(f<0.08?0.9+f/0.08*0.9:f<0.3?1.8+0.5*sstep(0.08,0.3,f):2.3-2.15*sstep(0.3,1,f));
+    for(let j=0;j<=NR;j++){const a=j/NR*6.283-Math.PI/2,ca=Math.cos(a),sa=Math.sin(a),k=(i*(NR+1)+j)*3,rr=r*(sa<0?0.85:1);pos[k]=p.x+(X.x*ca*0.8+B.x*sa)*rr;pos[k+1]=p.y+(X.y*ca*0.8+B.y*sa)*rr;pos[k+2]=p.z+(X.z*ca*0.8+B.z*sa)*rr;}
+    // aleta continua del lomo y de la panza
+    const hd=s*1.2*sstep(0.12,0.3,f)*(1-sstep(0.75,1,f))*(0.8+0.2*Math.sin(f*40))+s*0.9*sstep(0.9,1,f),hv=s*0.8*sstep(0.5,0.65,f)*(1-sstep(0.85,0.98,f));
+    const k2=i*12,tp=r*0.98,bt=r*0.85;fp[k2]=p.x+B.x*tp;fp[k2+1]=p.y+B.y*tp;fp[k2+2]=p.z+B.z*tp;fp[k2+3]=p.x+B.x*(tp+hd);fp[k2+4]=p.y+B.y*(tp+hd);fp[k2+5]=p.z+B.z*(tp+hd);
+    fp[k2+6]=p.x-B.x*bt;fp[k2+7]=p.y-B.y*bt;fp[k2+8]=p.z-B.z*bt;fp[k2+9]=p.x-B.x*(bt+hv);fp[k2+10]=p.y-B.y*(bt+hv);fp[k2+11]=p.z-B.z*(bt+hv);}
+  M.bgeo.attributes.position.needsUpdate=true;M.bgeo.computeVertexNormals();M.bgeo.computeBoundingSphere();M.fgeo.attributes.position.needsUpdate=true;M.fgeo.computeVertexNormals();M.fgeo.computeBoundingSphere();
+  // la cabeza va pegada al primer nodo
+  M.head.position.copy(nodes[0].position);M.head.quaternion.copy(nodes[0].quaternion);M.body.visible=M.fins.visible=M.head.visible=true;}
 function l3FaunaBuild(G){const F={grp:new THREE.Group(),mer:[],hum:[],med:[],sunk:{}};G.group.add(F.grp);G.fauna=F;
-  // merodeadores: anguilas de ~26 m que nadan en círculos alrededor de la balsa y sacan el lomo
-  const eelM=new THREE.MeshPhongMaterial({map:l3EelTex(),color:0xb0b8b4,shininess:50,specular:0x334040}),finM=new THREE.MeshPhongMaterial({color:0x232b2a,side:THREE.DoubleSide,shininess:30}),
-    toothM=new THREE.MeshLambertMaterial({color:0xd8d0b8}),sg=new THREE.SphereGeometry(1,16,12),eyeM=new THREE.MeshBasicMaterial({color:0xd8f0d0,fog:false});
-  for(let m=0;m<4;m++){const segs=[],N=12,L=22+m*4;
-    for(let k=0;k<N;k++){const f=k/(N-1),r=(f<0.12?1.3+f*5:2.2-1.9*sstep(0.25,1,f))*(L/26);const s=new THREE.Mesh(sg,eelM);s.scale.set(r,r*0.85,Math.max(L/N*1.25,r*1.6));s.visible=false;F.grp.add(s);segs.push(s);}
-    const h=segs[0];
-    // cabeza: hocico largo, dientes hacia afuera y cuatro ojos pálidos
-    const sn=new THREE.Mesh(sg,eelM);sn.position.set(0,-0.1,0.9);sn.scale.set(0.6,0.45,1.1);h.add(sn);
-    for(let k=0;k<10;k++){const t=new THREE.Mesh(new THREE.ConeGeometry(0.06,0.35,5),toothM);const a=(k/9-0.5)*2.2;t.position.set(Math.sin(a)*0.55,-0.42,1.0+Math.cos(a)*0.7);t.rotation.set(Math.PI*0.9,0,Math.sin(a)*0.4);h.add(t);}
-    [[-0.42,0.28,0.85],[0.42,0.28,0.85],[-0.52,0.18,0.45],[0.52,0.18,0.45]].forEach(([x,y,z])=>{const e=new THREE.Mesh(new THREE.SphereGeometry(0.11,8,6),eyeM);e.position.set(x,y,z);h.add(e);const gl=glowSprite(0xcff0c0,0.9,true);gl.material.opacity=0.6;e.add(gl);});
-    const dor=new THREE.Mesh(new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute([0,0.6,1.2, 0,0.6,-1.4, 0,2.6,-2.2],3)),finM);dor.geometry.computeVertexNormals();segs[3].add(dor);
-    const dor2=dor.clone();dor2.scale.set(1,0.7,0.8);segs[6].add(dor2);
-    const tail=new THREE.Mesh(new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute([0,0,0, 0,2.2,-2.6, 0,-1.6,-2.4],3)),finM);tail.geometry.computeVertexNormals();segs[N-1].add(tail);
-    [-1,1].forEach(sx=>{const p=new THREE.Mesh(new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute([0,0,0.4, sx*2.2,-0.6,-0.8, 0,0,-0.6],3)),finM);p.geometry.computeVertexNormals();segs[2].add(p);});
-    F.mer.push({segs,N,L,R0:42+m*26,w:(m%2?-1:1)*(0.07+m*0.012),th:m*1.7,T:13+m*3.4,ph:m*3.1,was:false});}
-  // los que esperan: figuras humanas altísimas y flacas, con el agua a la cintura, que te siguen con la cara
-  const pale=new THREE.MeshPhongMaterial({map:l3PaleTex(false),color:0x8e968e,shininess:60,specular:0x3a4040}),ribM=new THREE.MeshPhongMaterial({map:l3PaleTex(true),color:0x8e968e,shininess:60,specular:0x3a4040}),dark=new THREE.MeshBasicMaterial({color:0x050404}),hairM=new THREE.MeshLambertMaterial({color:0x0c0b0a,side:THREE.DoubleSide});
-  const cap=(r,l)=>{const g=new THREE.CylinderGeometry(r,r*0.8,l,10);g.translate(0,-l/2,0);return g;};
+  // ---- anguilas gigantes: cuerpo de una sola pieza que se recalcula siguiendo una curva ----
+  const eelM=new THREE.MeshPhongMaterial({map:l3EelTex(),color:0xb0b8b4,shininess:50,specular:0x334040}),finM=new THREE.MeshPhongMaterial({color:0x2a3534,side:THREE.DoubleSide,shininess:30,transparent:true,opacity:0.92}),
+    toothM=new THREE.MeshLambertMaterial({color:0xd8d0b8}),eyeM=new THREE.MeshBasicMaterial({color:0xd8f0d0,fog:false});
+  const wedgeG=(g,k)=>{const p=g.attributes.position;for(let i=0;i<p.count;i++){const z=p.getZ(i);if(z>0){p.setX(i,p.getX(i)*(1-k*z));p.setY(i,p.getY(i)*(1-k*0.6*z));}}g.computeVertexNormals();return g;};
+  for(let m=0;m<4;m++){const N=12,L=22+m*4,s=L/26,NR=14,RG=34,segs=[];
+    for(let k=0;k<N;k++){const o=new THREE.Object3D();F.grp.add(o);segs.push(o);}
+    const cpts=segs.map(()=>new THREE.Vector3()),curve=new THREE.CatmullRomCurve3(cpts);
+    const bpos=new Float32Array(RG*(NR+1)*3),uv=new Float32Array(RG*(NR+1)*2),idx=[];for(let i=0;i<RG;i++)for(let j=0;j<=NR;j++){uv[(i*(NR+1)+j)*2]=i/RG*3;uv[(i*(NR+1)+j)*2+1]=j/NR;}
+    for(let i=0;i<RG-1;i++)for(let j=0;j<NR;j++){const a=i*(NR+1)+j,b=a+1,c=a+NR+1,d=c+1;idx.push(a,c,b,b,c,d);}
+    const bgeo=new THREE.BufferGeometry();bgeo.setAttribute('position',new THREE.BufferAttribute(bpos,3));bgeo.setAttribute('uv',new THREE.BufferAttribute(uv,2));bgeo.setIndex(idx);
+    const body=new THREE.Mesh(bgeo,eelM);body.frustumCulled=false;body.visible=false;F.grp.add(body);
+    const fpos=new Float32Array(RG*4*3),fidx=[];for(let i=0;i<RG-1;i++){const a=i*4,b=a+4;fidx.push(a,b,a+1,a+1,b,b+1,a+2,b+2,a+3,a+3,b+2,b+3);}
+    const fgeo=new THREE.BufferGeometry();fgeo.setAttribute('position',new THREE.BufferAttribute(fpos,3));fgeo.setIndex(fidx);const fins=new THREE.Mesh(fgeo,finM);fins.frustumCulled=false;fins.visible=false;F.grp.add(fins);
+    // cabeza: cráneo en cuña, mandíbula, dientes hacia afuera, cuatro ojos pálidos y barbas
+    const head=new THREE.Group();head.visible=false;F.grp.add(head);
+    const sk=new THREE.Mesh(wedgeG(new THREE.SphereGeometry(1,24,16,0,Math.PI*2,0,Math.PI*0.62),0.55),eelM);sk.scale.set(1.25*s,0.95*s,2.6*s);sk.position.z=0.6*s;head.add(sk);
+    const jw=new THREE.Mesh(wedgeG(new THREE.SphereGeometry(1,24,10,0,Math.PI*2,Math.PI*0.5,Math.PI*0.5),0.55),eelM);jw.scale.set(1.15*s,0.6*s,2.5*s);jw.position.set(0,-0.25*s,0.5*s);jw.rotation.x=0.12;head.add(jw);
+    const gumM=new THREE.MeshLambertMaterial({color:0x2a1416,side:THREE.DoubleSide});const fl=new THREE.Mesh(new THREE.CircleGeometry(1,20),gumM);fl.rotation.x=-Math.PI/2;fl.scale.set(1.05*s,2.3*s,1);fl.position.set(0,-0.22*s,0.6*s);head.add(fl);
+    for(let k=0;k<16;k++){const a=(k/15-0.5)*2.2,t=new THREE.Mesh(new THREE.ConeGeometry(0.07*s,0.42*s,5),toothM);t.position.set(Math.sin(a)*0.95*s*(1-0.4*Math.max(0,Math.cos(a))),-0.32*s,0.6*s+Math.cos(a)*2.1*s);t.rotation.set(Math.PI*0.88,0,Math.sin(a)*0.5);head.add(t);}
+    [[-0.62,0.42,1.5],[0.62,0.42,1.5],[-0.78,0.3,0.9],[0.78,0.3,0.9]].forEach(([x,y,z])=>{const e=new THREE.Mesh(new THREE.SphereGeometry(0.13*s,10,8),eyeM);e.position.set(x*s,y*s,z*s);head.add(e);const gl=glowSprite(0xcff0c0,1.1*s,true);gl.material.opacity=0.6;e.add(gl);});
+    [-1,1].forEach(sx=>{const pts=[];for(let k=0;k<=6;k++){const t=k/6;pts.push(new THREE.Vector3(sx*(0.5+t*0.9)*s,(-0.4-t*1.4)*s,(2.2-t*1.4)*s));}head.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),10,0.05*s,5,false),eelM));});
+    // aleta de la cola y aletas pectorales con forma
+    const tailS=new THREE.Shape();tailS.moveTo(0,0);tailS.quadraticCurveTo(1.4,1.2,0.6,2.6);tailS.quadraticCurveTo(0.2,1.2,-0.5,0.2);tailS.quadraticCurveTo(0.2,-1,0.4,-2);tailS.quadraticCurveTo(0.6,-0.8,0,0);
+    const tail=new THREE.Mesh(new THREE.ShapeGeometry(tailS,8),finM);tail.scale.setScalar(s);tail.rotation.y=Math.PI/2;segs[N-1].add(tail);
+    const pecS=new THREE.Shape();pecS.moveTo(0,0);pecS.quadraticCurveTo(1.2,0.3,2.2,-0.6);pecS.quadraticCurveTo(1.2,-0.4,0.2,-0.8);pecS.lineTo(0,0);
+    [-1,1].forEach(sx=>{const pf=new THREE.Mesh(new THREE.ShapeGeometry(pecS,6),finM);pf.scale.set(sx*s,s,s);pf.rotation.set(-Math.PI/2+0.3,0,0);pf.position.set(sx*1.3*s,-0.6*s,-0.5*s);segs[1].add(pf);});
+    const M={segs,N,L,NR,RG,R0:42+m*26,w:(m%2?-1:1)*(0.07+m*0.012),th:m*1.7,T:13+m*3.4,ph:m*3.1,was:false,cpts,curve,bpos,bgeo,body,fpos,fgeo,fins,head};M.update=()=>l3EelBody(M);F.mer.push(M);}
+  // ---- ahogados gigantes: cuerpo de una pieza, costillas, manos con dedos y pelo mojado ----
+  const pale=new THREE.MeshPhongMaterial({map:l3PaleTex(false),color:0x8e968e,shininess:60,specular:0x3a4040}),ribM=new THREE.MeshPhongMaterial({map:rep(l3PaleTex(true),1,1),color:0x8e968e,shininess:60,specular:0x3a4040}),
+    dark=new THREE.MeshBasicMaterial({color:0x050404}),hairM=new THREE.MeshPhongMaterial({color:0x0b0a0a,shininess:80,specular:0x333333});
   for(let m=0;m<6;m++){const root=new THREE.Group();root.visible=false;F.grp.add(root);
-    // torso flaco con costillas, hombros huesudos, cuello largo y cabeza ladeada
-    const torso=new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.2,1.7,14),ribM);torso.position.y=0.55;root.add(torso);
-    const chest=new THREE.Mesh(new THREE.SphereGeometry(1,16,12),ribM);chest.scale.set(0.42,0.5,0.26);chest.position.y=1.15;root.add(chest);
-    [-1,1].forEach(sx=>{const sh=new THREE.Mesh(new THREE.SphereGeometry(0.15,10,8),pale);sh.position.set(sx*0.5,1.5,0);root.add(sh);const cl=new THREE.Mesh(cap(0.05,0.5),pale);cl.position.set(sx*0.05,1.52,0.08);cl.rotation.z=sx*1.35;root.add(cl);});
-    const neck=new THREE.Mesh(cap(0.08,0.8),pale);neck.position.y=2.35;root.add(neck);
-    const hd=new THREE.Group();hd.position.y=2.3;root.add(hd);
-    const skull=new THREE.Mesh(new THREE.SphereGeometry(1,18,14),pale);skull.scale.set(0.22,0.36,0.24);skull.position.y=0.2;hd.add(skull);
-    const jawB=new THREE.Mesh(new THREE.SphereGeometry(1,14,10),pale);jawB.scale.set(0.15,0.2,0.16);jawB.position.set(0,-0.08,0.05);hd.add(jawB);
-    [-1,1].forEach(sx=>{const so=new THREE.Mesh(new THREE.SphereGeometry(0.06,10,8),dark);so.scale.set(1,1.5,0.5);so.position.set(sx*0.08,0.26,0.21);hd.add(so);const pu=glowSprite(0xf4f0d0,0.1,true);pu.material.opacity=0.95;pu.position.set(sx*0.08,0.25,0.235);hd.add(pu);});
-    const mouth=new THREE.Mesh(new THREE.SphereGeometry(0.05,10,8),dark);mouth.scale.set(0.9,3.4,0.5);mouth.position.set(0,-0.04,0.19);hd.add(mouth);
-    for(let k=0;k<16;k++){const a=(k/15-0.5)*3.2,hl=1.1+((k*13)%5)*0.3,st=new THREE.Mesh(new THREE.PlaneGeometry(0.07,hl),hairM);st.geometry.translate(0,-hl/2,0);st.position.set(Math.sin(a)*0.21,0.48,-Math.cos(a)*0.18+0.02);st.rotation.set(-0.12*Math.cos(a),a,0.05*Math.sin(a));hd.add(st);}
-    hd.rotation.z=(m%2?1:-1)*0.55;
-    const arms=[];[-1,1].forEach(sx=>{const sp=new THREE.Group();sp.position.set(sx*0.55,1.5,0);root.add(sp);const up=new THREE.Mesh(cap(0.085,1.5),pale);sp.add(up);const el=new THREE.Group();el.position.y=-1.5;sp.add(el);
-      const eb=new THREE.Mesh(new THREE.SphereGeometry(0.09,8,6),pale);el.add(eb);const fo=new THREE.Mesh(cap(0.07,1.6),pale);el.add(fo);
-      for(let q=0;q<4;q++){const fi=new THREE.Mesh(cap(0.02,0.6),pale);fi.position.set((q-1.5)*0.035,-1.6,0);fi.rotation.z=(q-1.5)*0.12;el.add(fi);}sp.rotation.z=sx*0.32;arms.push({sp,el,sx});});
+    // torso: pelvis, cintura hundida, costillas marcadas, pecho y hombros caídos
+    const tor=new THREE.Mesh(latheGeo([[0.001,-0.9],[0.24,-0.85],[0.28,-0.5],[0.2,0],[0.18,0.25],[0.28,0.6],[0.33,0.95],[0.34,1.25],[0.31,1.45],[0.22,1.6],[0.1,1.7],[0.001,1.72]],18),ribM);tor.scale.z=0.62;root.add(tor);
+    // omóplatos y clavículas que se marcan bajo la piel
+    [-1,1].forEach(sx=>{const bl=new THREE.Mesh(new THREE.SphereGeometry(1,12,8),pale);bl.scale.set(0.12,0.16,0.05);bl.position.set(sx*0.15,1.25,-0.19);bl.rotation.z=sx*0.3;root.add(bl);
+      const cl=new THREE.Mesh(capsuleGeo(0.03,0.025,0.32,8),pale);cl.position.set(sx*0.04,1.55,0.15);cl.rotation.z=sx*1.4;root.add(cl);});
+    const neck=new THREE.Mesh(capsuleGeo(0.075,0.09,0.62,10),pale);neck.position.y=2.28;root.add(neck);
+    const hd=new THREE.Group();hd.position.y=2.24;root.add(hd);
+    const skull=new THREE.Mesh(latheGeo([[0.001,-0.22],[0.09,-0.2],[0.14,-0.1],[0.17,0.05],[0.2,0.22],[0.19,0.36],[0.14,0.46],[0.001,0.5]],16),pale);skull.scale.z=1.08;hd.add(skull);
+    [-1,1].forEach(sx=>{const ck=new THREE.Mesh(new THREE.SphereGeometry(1,10,8),pale);ck.scale.set(0.05,0.04,0.06);ck.position.set(sx*0.13,0.08,0.13);hd.add(ck);
+      const so=new THREE.Mesh(new THREE.SphereGeometry(0.058,12,10),dark);so.scale.set(1,1.45,0.55);so.position.set(sx*0.075,0.2,0.175);hd.add(so);const pu=glowSprite(0xf4f0d0,0.09,true);pu.material.opacity=0.95;pu.position.set(sx*0.075,0.19,0.2);hd.add(pu);
+      const ns=new THREE.Mesh(new THREE.SphereGeometry(0.012,6,5),dark);ns.position.set(sx*0.015,0.07,0.205);hd.add(ns);});
+    const mouth=new THREE.Mesh(new THREE.SphereGeometry(0.05,10,8),dark);mouth.scale.set(0.9,3.2,0.5);mouth.position.set(0,-0.08,0.165);hd.add(mouth);
+    // pelo: mechones mojados que cuelgan pegados por detrás y a los lados
+    for(let k=0;k<40;k++){const a=(k/39-0.5)*3.6,hl=1.0+((k*13)%7)*0.18,x0=Math.sin(a)*0.19,z0=-Math.cos(a)*0.18+0.02,pts=[];
+      for(let q=0;q<=6;q++){const t=q/6;pts.push(new THREE.Vector3(x0*(1+t*0.25)+Math.sin(k*1.7+t*3)*0.03,0.44-t*hl,z0*(1+t*0.3)-t*0.04));}
+      hd.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),8,0.013-((k%3)*0.003),4,false),hairM));}
+    // brazos largos de una pieza, codo marcado, manos con dedos de dos falanges
+    const arms=[];[-1,1].forEach(sx=>{const sp=new THREE.Group();sp.position.set(sx*0.38,1.5,0);root.add(sp);const sh=new THREE.Mesh(new THREE.SphereGeometry(0.1,12,10),pale);sp.add(sh);
+      sp.add(new THREE.Mesh(capsuleGeo(0.095,0.07,1.5,10),pale));const el=new THREE.Group();el.position.y=-1.5;sp.add(el);el.add(new THREE.Mesh(capsuleGeo(0.07,0.05,1.55,10),pale));
+      const hand=new THREE.Group();hand.position.y=-1.55;el.add(hand);const palm=new THREE.Mesh(new THREE.SphereGeometry(1,10,8),pale);palm.scale.set(0.075,0.12,0.035);palm.position.y=-0.09;hand.add(palm);
+      for(let q=0;q<4;q++){const f1=new THREE.Group();f1.position.set((q-1.5)*0.038,-0.19,0);f1.rotation.set(0.12,0,(q-1.5)*0.1);hand.add(f1);f1.add(new THREE.Mesh(capsuleGeo(0.017,0.015,0.3,6),pale));
+        const f2=new THREE.Group();f2.position.y=-0.3;f2.rotation.x=0.35;f1.add(f2);f2.add(new THREE.Mesh(capsuleGeo(0.015,0.01,0.26,6),pale));}
+      const th=new THREE.Group();th.position.set(-sx*0.06,-0.06,0.03);th.rotation.set(0.3,0,-sx*0.6);hand.add(th);th.add(new THREE.Mesh(capsuleGeo(0.018,0.013,0.24,6),pale));
+      sp.rotation.z=sx*0.32;arms.push({sp,el,sx});});
     root.traverse(o=>{if(o.isMesh)o.castShadow=false;});
     F.hum.push({root,hd,arms,slot:-1,y:0});}
-  // medusas abisales: campanas que brillan bajo el agua con tentáculos largos
-  const bellM=new THREE.MeshBasicMaterial({color:0x5f9a94,transparent:true,opacity:0.22,blending:THREE.AdditiveBlending,depthWrite:false,fog:false,side:THREE.DoubleSide});
-  for(let m=0;m<5;m++){const g=new THREE.Group();g.visible=false;F.grp.add(g);const b=new THREE.Mesh(new THREE.SphereGeometry(1,20,10,0,Math.PI*2,0,Math.PI*0.55),bellM);b.renderOrder=3;g.add(b);
+  // ---- medusas abisales: campana con borde ondulado y canales, brazos orales y muchos tentáculos ----
+  const mt=l3MedTex(),bellM=new THREE.MeshBasicMaterial({color:0x6fb8b0,map:mt,transparent:true,opacity:0.5,blending:THREE.AdditiveBlending,depthWrite:false,fog:false,side:THREE.DoubleSide}),
+    armM=new THREE.MeshBasicMaterial({color:0x8a5a80,transparent:true,opacity:0.16,blending:THREE.AdditiveBlending,depthWrite:false,fog:false,side:THREE.DoubleSide});
+  for(let m=0;m<5;m++){const g=new THREE.Group();g.visible=false;F.grp.add(g);
+    const bg=new THREE.SphereGeometry(1,40,14,0,Math.PI*2,0,Math.PI*0.58),bp=bg.attributes.position,bu=bg.attributes.uv;
+    for(let i=0;i<bp.count;i++){const x=bp.getX(i),y=bp.getY(i),z=bp.getZ(i),a=Math.atan2(z,x),edge=sstep(0.25,-0.25,y),w=1+0.07*Math.sin(a*16)*edge;bp.setXYZ(i,x*w,y+0.08*Math.sin(a*8)*edge,z*w);bu.setXY(i,0.5+x*0.5,0.5+z*0.5);}bg.computeVertexNormals();
+    const b=new THREE.Mesh(bg,bellM);b.renderOrder=3;g.add(b);const inner=new THREE.Mesh(new THREE.SphereGeometry(0.7,20,8,0,Math.PI*2,0,Math.PI*0.5),bellM);inner.position.y=-0.05;inner.renderOrder=3;b.add(inner);
     const core=glowSprite(0x8fc8c0,3.5,false);core.material.opacity=0.25;core.renderOrder=3;core.position.y=0.2;g.add(core);
-    const lines=[];for(let k=0;k<9;k++){const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(new Float32Array(14*3),3));const ln=new THREE.Line(pg,new THREE.LineBasicMaterial({color:0x6aa8a0,transparent:true,opacity:0.28,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));ln.renderOrder=3;ln.frustumCulled=false;g.add(ln);lines.push({ln,a:k/9*6.283,len:7+((k*7)%5)*2});}
+    // brazos orales: cintas onduladas que bajan del centro
+    for(let k=0;k<4;k++){const a0=k/4*6.283,pts=[];for(let q=0;q<=14;q++){const t=q/14;pts.push(new THREE.Vector3(Math.cos(a0+t*2.5)*0.25*(1-t*0.3),-t*6,Math.sin(a0+t*2.5)*0.25*(1-t*0.3)));}
+      const ag=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),40,0.16,6,false),ap=ag.attributes.position;for(let i=0;i<ap.count;i++){const y=ap.getY(i);ap.setX(i,ap.getX(i)+Math.sin(y*3+k)*0.12);}
+      const arm=new THREE.Mesh(ag,armM);arm.renderOrder=3;arm.scale.set(1.2,1,0.45);g.add(arm);}
+    const lines=[];for(let k=0;k<18;k++){const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(new Float32Array(16*3),3));const ln=new THREE.Line(pg,new THREE.LineBasicMaterial({color:0x6aa8a0,transparent:true,opacity:0.3,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));ln.renderOrder=3;ln.frustumCulled=false;g.add(ln);lines.push({ln,a:k/18*6.283,len:7+((k*7)%6)*2});}
     F.med.push({g,b,lines,x:0,z:0,y:0,s:1.6+m*0.25,ph:m*1.3,live:false});}}
 const _fv=new THREE.Vector3();
 function l3FaunaTick(G,dt,mr,a){const F=G.fauna;if(!F)return;
   const on=!!mr&&a>=0&&a<L3.SWALLOW+G.ser.eatHitT,rx=mr?mr.x:0,rz=mr?mr.z:0,t=S.t,tb=a-L3.BREACH,calm=tb>-4&&tb<40;
   // merodeadores
-  for(const M of F.mer){if(!on){M.segs.forEach(s=>s.visible=false);continue;}
+  for(const M of F.mer){if(!on){M.body.visible=M.fins.visible=M.head.visible=false;continue;}
     const surf=k=>{const ph=(t-k*0.22)/M.T*6.283+M.ph,v=Math.sin(ph);return calm?L3.SEA-14:L3.SEA-7.5+(v>0?Math.pow(v,0.7)*6.4:v*2);};
     const th=M.th+M.w*t,sgn=Math.sign(M.w),dl=M.L/M.N/M.R0;
-    for(let k=0;k<M.N;k++){const tk=th-sgn*k*dl,R=M.R0+Math.sin(t*2.1-k*0.6)*1.1;const s=M.segs[k];s.visible=true;s.position.set(rx+Math.cos(tk)*R,surf(k),rz+Math.sin(tk)*R);}
+    for(let k=0;k<M.N;k++){const tk=th-sgn*k*dl,R=M.R0+Math.sin(t*2.1-k*0.6)*1.1;const s=M.segs[k];s.position.set(rx+Math.cos(tk)*R,surf(k),rz+Math.sin(tk)*R);}
     for(let k=0;k<M.N;k++){const s=M.segs[k],nx=k===0?null:M.segs[k-1].position;if(k===0){const tk=th+sgn*dl;_fv.set(rx+Math.cos(tk)*M.R0,surf(-1),rz+Math.sin(tk)*M.R0);s.lookAt(_fv);}else s.lookAt(nx);}
-    const hy=M.segs[2].position.y,up=hy>L3.SEA-0.6;
+    l3EelBody(M);const hy=M.segs[2].position.y,up=hy>L3.SEA-0.6;
     if(up&&!M.was){const p=M.segs[2].position,d=Math.hypot(p.x-P.x,p.z-P.z);waterRipple(p.x,p.z,0.3,L3.SEA);if(d<140){noiseBurst(0.9,240,0.07*clamp(1-d/140,0.1,1));tone(62,0,1.4,0.05*clamp(1-d/140,0,1),'sine');}if(d<60)S.san=Math.max(0,S.san-0.01);}
     M.was=up;}
   // los que esperan: posiciones fijas a los lados del trayecto
@@ -4452,7 +4509,7 @@ function l3FaunaTick(G,dt,mr,a){const F=G.fauna;if(!F)return;
     if(!M.live||Math.hypot(M.x-rx,M.z-rz)>95){const ang=Math.random()*6.283,r=25+Math.random()*60;M.x=rx+Math.cos(ang)*r;M.z=rz+18+Math.sin(ang)*r;M.y=L3.SEA-6-Math.random()*8;M.live=true;}
     M.x+=Math.sin(t*0.13+M.ph)*dt*0.4;M.z+=Math.cos(t*0.11+M.ph)*dt*0.4;const pul=1+0.12*Math.sin(t*1.6+M.ph);
     M.g.visible=true;M.g.position.set(M.x,M.y+Math.sin(t*0.8+M.ph)*0.4,M.z);M.b.scale.set(M.s*pul,M.s*0.7/pul,M.s*pul);
-    for(const T of M.lines){const p=T.ln.geometry.attributes.position;for(let q=0;q<14;q++){const f=q/13,rr=M.s*0.8*(1-f*0.6);p.setXYZ(q,Math.cos(T.a)*rr+Math.sin(t*1.1+q*0.5+T.a)*f*0.9,-f*T.len,Math.sin(T.a)*rr+Math.cos(t*0.9+q*0.4+T.a)*f*0.9);}p.needsUpdate=true;}}}
+    for(const T of M.lines){const p=T.ln.geometry.attributes.position;for(let q=0;q<16;q++){const f=q/15,rr=M.s*0.8*(1-f*0.6);p.setXYZ(q,Math.cos(T.a)*rr+Math.sin(t*1.1+q*0.5+T.a)*f*0.9,-f*T.len,Math.sin(T.a)*rr+Math.cos(t*0.9+q*0.4+T.a)*f*0.9);}p.needsUpdate=true;}}}
 function l3Spray(G,x,z,n,big){const Z=G.ser;for(let q=0;q<n;q++){const o=Z.spr[Z.sprK];Z.sprK=(Z.sprK+1)%Z.spr.length;const a=Math.random()*6.283,r=Math.random()*60*big;
   o.s.position.set(x+Math.cos(a)*r,L3.SEA+5,z+Math.sin(a)*r);o.vx=Math.cos(a)*(8+Math.random()*20)*big;o.vz=Math.sin(a)*(8+Math.random()*20)*big;o.vy=(30+Math.random()*60)*big;o.life=5+Math.random()*4;o.sz=(40+Math.random()*70)*big;o.s.visible=true;}}
 function l3SprayTick(G,dt){for(const o of G.ser.spr){if(o.life<=0)continue;o.life-=dt;o.vy-=9.8*dt;o.s.position.x+=o.vx*dt;o.s.position.y=Math.max(L3.SEA,o.s.position.y+o.vy*dt);o.s.position.z+=o.vz*dt;
