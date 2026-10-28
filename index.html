@@ -3343,7 +3343,7 @@ const CRX_T={};
   T.velas=(g,u,R,M)=>{for(let i=0;i<2+Math.floor(R()*3);i++){const h=u*(0.15+R()*0.3),x=(R()-0.5)*u*0.4,z=(R()-0.5)*u*0.4;add(g,cy(u*0.03,u*0.035,h,6),M('wax'),x,0,z);add(g,cone(u*0.012,u*0.05,4),M('flame'),x,h,z);}};
   T.tubos=(g,u,R,M)=>{add(g,new V.TorusGeometry(u*0.25,u*0.04,5,8,Math.PI),M('metal'),0,0,0,0,R()*3,0);add(g,cy(u*0.06,u*0.06,u*0.04,6),M('dark'),u*0.25,0,0);add(g,cy(u*0.06,u*0.06,u*0.04,6),M('dark'),-u*0.25,0,0);};
   T.tornillos=(g,u,R,M)=>{for(let i=0;i<3;i++){const x=(i-1)*u*0.2;add(g,cy(u*0.05,u*0.05,u*0.04,6),M('metal'),x,0,0);add(g,new V.BoxGeometry(u*0.06,u*0.01,u*0.015),M('pupil'),x,u*0.045,0);}};
-  T.cadenas=(g,u,R,M)=>{const m=M('metal');for(let i=0;i<6;i++)add(g,new V.TorusGeometry(u*0.05,u*0.012,3,6),m,0,u*0.02-i*u*0.08,u*0.05,0,i%2?Math.PI/2:0,0);};
+  T.cadenas=(g,u,R,M)=>{const m=M('metal');for(let i=0;i<6;i++)add(g,new V.TorusGeometry(u*0.05,u*0.012,3,6),m,0,u*0.04+i*u*0.08,0,0,i%2?Math.PI/2:0,0);};
   T.alambre=(g,u,R,M)=>{const m=M('metal');add(g,new V.TorusGeometry(u*0.35,u*0.01,3,14).rotateX(Math.PI/2),m,0,u*0.02,0);for(let k=0;k<8;k++){const a=k/8*6.283;add(g,cone(u*0.01,u*0.06,3),m,Math.cos(a)*u*0.35,u*0.02,Math.sin(a)*u*0.35,0,0,Math.PI/2*(k%2?1:-1));}};
   T.agujeros=(g,u,R,M)=>{for(let i=0;i<4+Math.floor(R()*4);i++){const s=u*(0.03+R()*0.04),x=(R()-0.5)*u*0.5,z=(R()-0.5)*u*0.5;add(g,new V.TorusGeometry(s,s*0.4,3,8).rotateX(Math.PI/2),M('flesh'),x,0,z);add(g,new V.CircleGeometry(s,8).rotateX(-Math.PI/2),M('pupil'),x,s*0.1,z);}};
   T.cerdas=(g,u,R,M)=>{for(let i=0;i<9;i++)add(g,cone(u*0.012,u*(0.2+R()*0.25),3),M('dark'),(R()-0.5)*u*0.3,0,(R()-0.5)*u*0.3,(R()-0.5)*0.8,0,(R()-0.5)*0.8);};
@@ -3366,7 +3366,7 @@ const CRX_T={};
   T.flores=(g,u,R,M)=>{add(g,cy(u*0.01,u*0.012,u*0.3,4),M('moss'));for(let k=0;k<5;k++){const a=k/5*6.283;add(g,ball(u*0.05,5,3).scale(1,0.3,0.5),M('skin2'),Math.cos(a)*u*0.05,u*0.3,Math.sin(a)*u*0.05,0,-a,0);}add(g,ball(u*0.03,5,4),M('pupil'),0,u*0.31,0);};
   T.cola_rata=(g,u,R,M)=>{chain(g,7,u*0.2,u*0.04,u*0.006,0.18,M('flesh'),0.2);};
   T.capucha_piel=(g,u,R,M)=>{add(g,new V.SphereGeometry(u*0.35,8,4,0,Math.PI*1.2,0,1.2).scale(1,1.2,1),M('skin2'),0,-u*0.1,0,0,-0.6*Math.PI,0);};
-  T.llaves=(g,u,R,M)=>{const m=M('metal');add(g,new V.TorusGeometry(u*0.08,u*0.012,3,8),m,0,-u*0.05,0);for(let k=0;k<3;k++){add(g,new V.BoxGeometry(u*0.02,u*0.18,u*0.005),m,(k-1)*u*0.04,-u*0.2,0,0,0,(k-1)*0.3);}};
+  T.llaves=(g,u,R,M)=>{const m=M('metal');add(g,new V.TorusGeometry(u*0.08,u*0.012,3,8),m,0,u*0.08,0);for(let k=0;k<3;k++){add(g,new V.BoxGeometry(u*0.02,u*0.18,u*0.005),m,(k-1)*u*0.04,u*0.24,0,0,0,(k-1)*0.3);}};
 })();
 // dónde puede crecer cada pieza
 const CRX_DEF={espinas:'lomo hombros cabeza brazos piernas cola costados',cuernos_curvos:'cabeza hombros cara lomo',cuernos_espiral:'cabeza cara hombros',astas:'cabeza hombros lomo',tumores:'lomo hombros costados cabeza pecho vientre brazos',pustulas:'lomo costados pecho cabeza vientre brazos',
@@ -3378,13 +3378,187 @@ const CRX_DEF={espinas:'lomo hombros cabeza brazos piernas cola costados',cuerno
   carita:'pecho vientre costados lomo hombros',glandulas:'pecho vientre costados',ala_vestigial:'lomo hombros costados',senuelo:'cabeza lomo',ramitas:'cabeza hombros lomo brazos',musgo:'lomo hombros cabeza piernas',agujas:'cabeza lomo pecho brazos',munon:'costados hombros pecho lomo',
   ojos_racimo:'cabeza hombros pecho costados brazos cuello',picos:'cara cabeza hombros piernas',cuernos_rectos:'cabeza cara hombros',parches_metal:'cabeza pecho costados brazos piernas lomo',suturas:'pecho costados cabeza lomo vientre',flores:'cabeza lomo hombros',
   cola_rata:'cola lomo vientre',capucha_piel:'cabeza',llaves:'cuello costados vientre'};
+/* ---------- catálogo ampliado de piezas (145 formas más) ---------- */
+const CRX_F={};
+(function(){const V=THREE,T=CRX_T,D=CRX_DEF,F=CRX_F,_Y=new V.Vector3(0,1,0);
+  const add=(g,geo,m,x,y,z,rx,ry,rz)=>{const o=new V.Mesh(geo,m);o.position.set(x||0,y||0,z||0);if(rx||ry||rz)o.rotation.set(rx||0,ry||0,rz||0);g.add(o);return o;};
+  const cone=(r,h,s)=>new V.ConeGeometry(r,h,s||5).translate(0,h/2,0),cy=(a,b,h,s)=>new V.CylinderGeometry(a,b,h,s||5).translate(0,h/2,0),ball=(r,w,hh)=>new V.SphereGeometry(r,w||7,hh||5),bx=(w,h,d)=>new V.BoxGeometry(w,h,d).translate(0,h/2,0);
+  const chain=(g,n,L,r0,r1,bend,m,twist,ph0)=>{const p=new V.Vector3();let th=0,ph=ph0||0;for(let i=0;i<n;i++){const r=r0+(r1-r0)*i/n,r2=r0+(r1-r0)*(i+1)/n,d=new V.Vector3(Math.sin(ph)*Math.sin(th),Math.cos(th),Math.cos(ph)*Math.sin(th));
+    const o=new V.Mesh(new V.CylinderGeometry(r2,r,L*1.08,5),m);o.position.copy(p).addScaledVector(d,L/2);o.quaternion.setFromUnitVectors(_Y,d);g.add(o);p.addScaledVector(d,L);th+=bend;ph+=twist||0;}return [p.x,p.y,p.z];};
+  const eye=(g,x,y,z,s,M,slit)=>{add(g,ball(s,8,6),M('eyeW'),x,y,z);if(slit)add(g,new V.BoxGeometry(s*0.25,s*0.3,s*1.2),M('pupil'),x,y+s*0.85,z);else add(g,ball(s*0.45,5,4),M('pupil'),x,y+s*0.72,z);};
+  const P=(k,pl,fl,fn)=>{T[k]=fn;D[k]=pl;if(fl)F[k]=fl;};
+  const HEAD='cabeza cara hombros',BODY='lomo hombros pecho costados vientre',LIMB='brazos piernas',ALL='lomo hombros pecho costados vientre cabeza brazos piernas';
+  // ---- cuernos y crecimientos de la cabeza ----
+  P('cuerno_torcido','cabeza cara lomo','',(g,u,R,M)=>{chain(g,7,u*0.15,u*0.07,u*0.01,0.22,M('horn'),0.5);});
+  P('cuernos_ramificados','cabeza hombros','s',(g,u,R,M)=>{const m=M('horn');chain(g,3,u*0.25,u*0.05,u*0.03,0.2,m,0);for(let i=0;i<4;i++){const s=new V.Group();s.position.set(0,u*(0.2+i*0.15),0);s.rotation.set(0,i*1.7,0.9);g.add(s);chain(s,2,u*0.18,u*0.025,u*0.008,0.3,m,0);}});
+  P('cuernos_colgantes','cabeza cara','s',(g,u,R,M)=>{chain(g,5,u*0.2,u*0.06,u*0.012,-0.5,M('horn'),0);});
+  P('corona_cuernos','cabeza','1',(g,u,R,M)=>{for(let i=0;i<9;i++){const a=i/9*6.283;add(g,cone(u*0.04,u*(0.2+R()*0.2),4),M('horn'),Math.cos(a)*u*0.3,0,Math.sin(a)*u*0.3,Math.sin(a)*0.4,0,-Math.cos(a)*0.4);}});
+  P('cuerno_rinoceronte','cara cabeza','',(g,u,R,M)=>{add(g,new V.ConeGeometry(u*0.14,u*0.6,7).translate(0,u*0.3,0),M('horn'),0,0,0,0.4,0,0);add(g,cone(u*0.07,u*0.25,6),M('horn'),0,0,-u*0.18,0.2,0,0);});
+  P('cuernos_bovinos','cabeza','s',(g,u,R,M)=>{chain(g,6,u*0.16,u*0.06,u*0.015,0.25,M('bone'),0,1.57);});
+  P('cresta_hueso','cabeza lomo','1',(g,u,R,M)=>{for(let i=0;i<7;i++)add(g,cy(u*0.012,u*0.02,u*(0.4+Math.sin(i/6*3.14)*0.3),4),M('bone'),0,0,(i-3)*u*0.06,(i-3)*0.18,0,0);add(g,new V.CircleGeometry(u*0.45,10,0,Math.PI).rotateY(Math.PI/2).scale(1,0.9,1),M('skin2'),0,0,0,0,0,0);});
+  P('cresta_carne','cabeza lomo','1',(g,u,R,M)=>{for(let i=0;i<5;i++)add(g,ball(u*0.1,6,5).scale(0.35,1.3,1),M('flesh'),0,u*0.1,(i-2)*u*0.12);});
+  P('penacho_puas','cabeza hombros','1',(g,u,R,M)=>{for(let i=0;i<12;i++){const a=(R()-0.5)*1.6;add(g,cone(u*0.015,u*(0.4+R()*0.4),3),M('dark'),0,0,0,-0.4+(R()-0.5)*0.4,0,a);}});
+  P('cuerno_roto','cabeza cara hombros','',(g,u,R,M)=>{add(g,cy(u*0.08,u*0.1,u*0.25,6),M('horn'));add(g,new V.TetrahedronGeometry(u*0.07,0),M('bone'),0,u*0.27,0,R(),R(),R());});
+  P('cuernos_cristal','cabeza hombros lomo','s',(g,u,R,M)=>{add(g,new V.ConeGeometry(u*0.06,u*1.1,4).translate(0,u*0.55,0),M('crystal'),0,0,0,-0.25,0,0);add(g,new V.ConeGeometry(u*0.04,u*0.5,4).translate(0,u*0.25,0),M('crystal'),u*0.06,0,0,0.3,0,-0.4);});
+  P('domo_craneal','cabeza','1',(g,u,R,M)=>{add(g,new V.SphereGeometry(u*0.4,10,6,0,6.283,0,1.4).scale(1,0.7,1.1),M('skin2'),0,-u*0.05,0);for(let i=0;i<5;i++)add(g,ball(u*0.08,6,4),M('skin2'),(R()-0.5)*u*0.5,u*0.2,(R()-0.5)*u*0.5);});
+  P('craneo_expuesto','cabeza cara','1',(g,u,R,M)=>{add(g,new V.SphereGeometry(u*0.3,10,6,0,6.283,0,1.2),M('bone'),0,-u*0.05,0);for(const s of [-1,1])add(g,new V.CircleGeometry(u*0.06,8).rotateX(-1.2),M('pupil'),s*u*0.1,u*0.14,u*0.22);});
+  P('lobulos','cabeza cara cuello','s',(g,u,R,M)=>{add(g,ball(u*0.12,7,5).scale(0.6,1.6,0.6).translate(0,u*0.15,0),M('skin'),0,0,0);});
+  P('aletas_cefalicas','cabeza cara','s',(g,u,R,M)=>{add(g,new V.ConeGeometry(u*0.3,u*0.6,3).scale(0.08,1,1).translate(0,u*0.3,0),M('skin2'),0,0,0,0,0,0.5);});
+  // ---- ojos ----
+  P('ojo_gigante','pecho cabeza lomo costados vientre','1',(g,u,R,M)=>{const s=u*0.35;add(g,ball(s*1.08,10,8).scale(1,1,0.6),M('skin'),0,0,0);eye(g,0,s*0.25,0,s,M);});
+  P('ojos_fila','cabeza pecho brazos costados','',(g,u,R,M)=>{for(let i=0;i<5;i++)eye(g,(i-2)*u*0.12,u*0.03,0,u*0.05,M);});
+  P('ojo_cosido','pecho cabeza costados vientre lomo','',(g,u,R,M)=>{add(g,ball(u*0.15,8,6).scale(1,0.5,1),M('skin2'));for(let i=0;i<5;i++)add(g,new V.BoxGeometry(u*0.01,u*0.03,u*0.12),M('pupil'),(i-2)*u*0.05,u*0.07,0);});
+  P('ojo_lloroso','cabeza pecho cara','',(g,u,R,M)=>{eye(g,0,u*0.05,0,u*0.08,M);for(let i=0;i<3;i++)add(g,cy(u*0.008,u*0.012,u*(0.2+i*0.1),4).rotateX(Math.PI/2),M('flesh'),(i-1)*u*0.03,u*0.02,u*0.06);});
+  P('ojo_rajado','cabeza pecho costados hombros','',(g,u,R,M)=>{eye(g,0,u*0.06,0,u*0.1,M,1);});
+  P('ojos_compuestos','cabeza cara','s',(g,u,R,M)=>{add(g,new V.IcosahedronGeometry(u*0.2,1).scale(1,1,0.7),M('chitin'));add(g,new V.IcosahedronGeometry(u*0.12,0),M('glow'),0,u*0.08,u*0.08);});
+  P('ojo_palma','brazos pecho costados','',(g,u,R,M)=>{add(g,ball(u*0.14,8,6).scale(1,0.4,1.2),M('skin'));for(let k=0;k<4;k++)add(g,cy(u*0.02,u*0.015,u*0.2,4),M('skin'),(k-1.5)*u*0.06,0,u*0.15,1.3,0,0);eye(g,0,u*0.05,0,u*0.05,M);});
+  P('ojo_colgante','cuello vientre pecho cabeza','',(g,u,R,M)=>{add(g,cy(u*0.006,u*0.006,u*0.5,3),M('flesh'));eye(g,0,u*0.55,0,u*0.08,M);});
+  P('cuenca_vacia','cabeza pecho costados lomo','',(g,u,R,M)=>{add(g,new V.TorusGeometry(u*0.1,u*0.04,5,10).rotateX(Math.PI/2),M('flesh'));add(g,new V.CircleGeometry(u*0.1,10).rotateX(-Math.PI/2),M('pupil'),0,u*0.01,0);});
+  P('ojo_parpados','cabeza pecho costados hombros','',(g,u,R,M)=>{eye(g,0,u*0.04,0,u*0.08,M);add(g,new V.SphereGeometry(u*0.09,8,4,0,6.283,0,1.1),M('skin'),0,u*0.04,0,-0.4,0,0);add(g,new V.SphereGeometry(u*0.09,8,4,0,6.283,0,0.9),M('skin'),0,u*0.04,0,Math.PI+0.5,0,0);});
+  P('ojo_mecanico','cabeza cara pecho','',(g,u,R,M)=>{add(g,new V.TorusGeometry(u*0.12,u*0.03,5,10).rotateX(Math.PI/2),M('metal'));add(g,cy(u*0.09,u*0.09,u*0.05,10),M('glow'));for(let k=0;k<4;k++){const a=k/4*6.283;add(g,cy(u*0.015,u*0.015,u*0.03,5),M('dark'),Math.cos(a)*u*0.12,u*0.02,Math.sin(a)*u*0.12);}});
+  P('ojos_espiral','pecho lomo costados','1',(g,u,R,M)=>{for(let i=0;i<9;i++){const a=i*0.9,r=u*0.03*i;eye(g,Math.cos(a)*r,u*0.02,Math.sin(a)*r,u*(0.02+i*0.006),M);}});
+  // ---- bocas y dientes ----
+  P('mandibulas_insecto','cara cuello pecho','s',(g,u,R,M)=>{const e=chain(g,4,u*0.12,u*0.05,u*0.015,0.45,M('chitin'),0);add(g,cone(u*0.015,u*0.06,3),M('dark'),e[0],e[1],e[2],1.8,0,0);});
+  P('colmillos','cara cuello pecho','s',(g,u,R,M)=>{add(g,new V.ConeGeometry(u*0.05,u*0.5,5).translate(0,u*0.25,0),M('bone'),0,0,0,0.2,0,0);});
+  P('boca_vertical','pecho vientre lomo costados','1',(g,u,R,M)=>{add(g,ball(u*0.25,8,6).scale(0.35,1,0.3),M('flesh'));add(g,new V.BoxGeometry(u*0.05,u*0.42,u*0.03),M('pupil'),0,0,u*0.07);for(let i=0;i<6;i++)for(const s of [-1,1])add(g,cone(u*0.015,u*0.06,3),M('bone'),s*u*0.04,(i-2.5)*u*0.07,u*0.07,0,0,-s*1.57);});
+  P('boca_cosida','pecho cara vientre costados','',(g,u,R,M)=>{add(g,new V.TorusGeometry(u*0.15,u*0.04,4,10).scale(1,0.35,1).rotateX(Math.PI/2),M('flesh'));for(let i=0;i<6;i++)add(g,new V.BoxGeometry(u*0.008,u*0.02,u*0.1),M('pupil'),(i-2.5)*u*0.05,u*0.02,0);});
+  P('labios','pecho cara vientre costados brazos','',(g,u,R,M)=>{add(g,new V.TorusGeometry(u*0.12,u*0.05,5,10).scale(1,1,0.45).rotateX(Math.PI/2),M('flesh'));add(g,new V.CircleGeometry(u*0.1,10).scale(1,0.4,1).rotateX(-Math.PI/2),M('pupil'),0,u*0.02,0);});
+  P('sonrisa','pecho vientre lomo costados','1',(g,u,R,M)=>{for(let i=0;i<11;i++){const a=(i-5)*0.12;add(g,new V.BoxGeometry(u*0.05,u*0.07,u*0.03),M('nail'),Math.sin(a)*u*0.45,-Math.cos(a)*u*0.45+u*0.45,u*0.02,0,0,a);}add(g,new V.TorusGeometry(u*0.45,u*0.035,4,14,1.4).rotateZ(-Math.PI/2-0.7),M('flesh'),0,u*0.45,0);});
+  P('ventosa','brazos piernas pecho costados vientre cola','m',(g,u,R,M)=>{add(g,cy(u*0.07,u*0.09,u*0.04,8),M('skin2'));add(g,new V.TorusGeometry(u*0.05,u*0.015,4,8).rotateX(Math.PI/2),M('flesh'),0,u*0.04,0);});
+  P('pico_ave','cara cuello','1',(g,u,R,M)=>{add(g,new V.ConeGeometry(u*0.1,u*0.45,4).translate(0,u*0.22,0).scale(1,1,0.6),M('nail'),0,0,0,0.5,0,0);add(g,new V.ConeGeometry(u*0.07,u*0.3,4).translate(0,u*0.15,0).scale(1,1,0.6),M('nail'),0,-u*0.05,0,0.9,0,0);});
+  P('trompa','cara cuello pecho','1',(g,u,R,M)=>{chain(g,7,u*0.13,u*0.09,u*0.04,0.22,M('skin'),0);});
+  P('proboscide','cara cuello','1',(g,u,R,M)=>{chain(g,6,u*0.15,u*0.025,u*0.008,0.1,M('chitin'),0.15);});
+  P('dientes_humanos','pecho vientre cara costados lomo brazos','',(g,u,R,M)=>{for(let i=0;i<6;i++)for(let j=0;j<2;j++)add(g,bx(u*0.05,u*0.07,u*0.04),M('nail'),(i-2.5)*u*0.055,j*u*0.075,0);add(g,new V.BoxGeometry(u*0.38,u*0.05,u*0.06),M('flesh'),0,0,0);});
+  P('encias','pecho vientre costados','',(g,u,R,M)=>{add(g,ball(u*0.22,8,5).scale(1,0.35,0.6),M('flesh'));for(let i=0;i<7;i++)add(g,cone(u*0.02,u*0.06,4),M('bone'),(i-3)*u*0.05,u*0.06,u*0.03);});
+  // ---- extremidades pequeñas ----
+  P('brazito','pecho costados vientre lomo hombros','',(g,u,R,M)=>{const e=chain(g,2,u*0.3,u*0.04,u*0.03,0.8,M('skin'),0);const h=new V.Group();h.position.set(e[0],e[1],e[2]);g.add(h);add(h,ball(u*0.06,6,4).scale(1,0.5,1.2),M('skin'));for(let k=0;k<4;k++)add(h,cy(u*0.01,u*0.008,u*0.1,4),M('skin'),(k-1.5)*u*0.025,0,u*0.05,1.4,0,0);});
+  P('pata_insecto','costados vientre lomo hombros','s',(g,u,R,M)=>{const e=chain(g,3,u*0.3,u*0.03,u*0.015,0.9,M('chitin'),0);add(g,cone(u*0.01,u*0.1,3),M('dark'),e[0],e[1],e[2],2.6,0,0);});
+  P('pinza','brazos hombros costados cara','s',(g,u,R,M)=>{add(g,cy(u*0.06,u*0.08,u*0.3,6),M('chitin'));add(g,new V.ConeGeometry(u*0.08,u*0.35,5).translate(0,u*0.17,0).scale(1,1,0.5),M('chitin'),u*0.04,u*0.3,0,0,0,-0.3);add(g,new V.ConeGeometry(u*0.05,u*0.25,5).translate(0,u*0.12,0).scale(1,1,0.5),M('chitin'),-u*0.04,u*0.3,0,0,0,0.5);});
+  P('garra_ave','piernas brazos vientre','',(g,u,R,M)=>{for(let k=-1;k<=1;k++){chain(g,3,u*0.1,u*0.02,u*0.008,0.5,M('nail'),k*0.5);}});
+  P('mano_esqueleto','pecho costados lomo vientre brazos','',(g,u,R,M)=>{const m=M('bone');add(g,cy(u*0.015,u*0.015,u*0.3,4),m);add(g,cy(u*0.015,u*0.015,u*0.3,4),m,u*0.03,0,0);for(let k=0;k<5;k++){const f=new V.Group();f.position.set((k-2)*u*0.03,u*0.32,0);f.rotation.z=(k-2)*0.2;g.add(f);chain(f,3,u*0.06,u*0.01,u*0.008,0.35,m,0);}});
+  P('brazo_quebrado','costados hombros pecho lomo','',(g,u,R,M)=>{add(g,cy(u*0.04,u*0.05,u*0.4,6),M('skin'),0,0,0,0.3,0,0);add(g,cy(u*0.035,u*0.04,u*0.35,6),M('skin'),0,u*0.38,u*0.12,-1.5,0,0.4);add(g,cone(u*0.02,u*0.08,4),M('bone'),0,u*0.38,u*0.12,0.5,0,0);});
+  P('dedo_gigante','pecho lomo costados cabeza','1',(g,u,R,M)=>{const e=chain(g,3,u*0.3,u*0.08,u*0.07,0.4,M('skin'),0);add(g,new V.BoxGeometry(u*0.1,u*0.02,u*0.12),M('nail'),e[0],e[1],e[2]+u*0.02,1.2,0,0);});
+  P('patas_mini','vientre costados pecho','1',(g,u,R,M)=>{for(let k=0;k<6;k++){const s=new V.Group();s.rotation.y=k/6*6.283;g.add(s);chain(s,2,u*0.15,u*0.015,u*0.008,1,M('dark'),0);}});
+  P('tentaculo_ventosas','vientre costados cara cola cuello','',(g,u,R,M)=>{chain(g,6,u*0.13,u*0.05,u*0.012,0.3,M('skin2'),0.1);for(let i=0;i<4;i++)add(g,cy(u*0.015,u*0.02,u*0.01,6),M('flesh'),0,u*(0.1+i*0.13),u*0.035,1.4,0,0);});
+  P('ala_murcielago','lomo hombros','s',(g,u,R,M)=>{const m=M('bone');for(let k=0;k<3;k++)add(g,cy(u*0.012,u*0.008,u*0.55,4),m,0,0,0,0,0,-0.4-k*0.4);const s=new V.Shape();s.moveTo(0,0);s.lineTo(u*0.21,u*0.5);s.lineTo(u*0.4,u*0.35);s.lineTo(u*0.5,u*0.12);s.lineTo(0,0);add(g,new V.ShapeGeometry(s).scale(-1,1,1).rotateY(0),M('skin2'),0,0,0,0,0,-0.1);});
+  P('ala_plumas','lomo hombros costados','s',(g,u,R,M)=>{for(let k=0;k<6;k++)add(g,new V.BoxGeometry(u*0.06,u*(0.3+k*0.06),u*0.01).translate(0,u*(0.15+k*0.03),0),M('dark'),k*u*0.04,0,0,0,0,-0.2-k*0.15);});
+  P('aleta_pectoral','costados hombros vientre','s',(g,u,R,M)=>{add(g,new V.ConeGeometry(u*0.2,u*0.45,3).scale(1,1,0.08).translate(0,u*0.22,0),M('skin2'),0,0,0,0,0,-0.6);});
+  P('pierna_mini','vientre costados pecho lomo','',(g,u,R,M)=>{add(g,cy(u*0.04,u*0.035,u*0.25,6),M('skin'));add(g,cy(u*0.03,u*0.025,u*0.22,6),M('skin'),0,u*0.25,0,0.6,0,0);add(g,ball(u*0.04,6,4).scale(1,0.5,1.6),M('dark'),0,u*0.43,u*0.13);});
+  P('pie_colgante','vientre pecho cuello cola','',(g,u,R,M)=>{add(g,cy(u*0.008,u*0.008,u*0.3,3),M('dark'));add(g,ball(u*0.06,6,4).scale(1,0.6,1.8),M('skin'),0,u*0.33,u*0.04);});
+  P('antebrazo_hueso','brazos costados lomo','',(g,u,R,M)=>{add(g,cy(u*0.02,u*0.025,u*0.4,5),M('bone'),-u*0.025,0,0);add(g,cy(u*0.015,u*0.02,u*0.4,5),M('bone'),u*0.025,0,0);add(g,ball(u*0.04,6,4),M('bone'),0,u*0.4,0);});
+  // ---- huesos ----
+  P('columna_expuesta','lomo cola','1',(g,u,R,M)=>{for(let i=0;i<8;i++){const a=(i-3.5)*0.13;add(g,new V.BoxGeometry(u*0.12,u*0.06,u*0.07),M('bone'),0,Math.cos(a)*u*0.3-u*0.27,Math.sin(a)*u*1.2,a,0,0);add(g,cone(u*0.02,u*0.1,3),M('bone'),0,Math.cos(a)*u*0.3-u*0.24,Math.sin(a)*u*1.2,a-0.4,0,0);}});
+  P('craneo_mini','hombros lomo pecho cabeza costados','',(g,u,R,M)=>{const m=M('bone');add(g,ball(u*0.11,8,6),m,0,u*0.12,0);add(g,new V.BoxGeometry(u*0.12,u*0.06,u*0.1),m,0,u*0.03,u*0.03);for(const s of [-1,1])add(g,ball(u*0.025,5,4),M('pupil'),s*u*0.04,u*0.12,u*0.09);});
+  P('costilla_suelta','costados pecho lomo','',(g,u,R,M)=>{add(g,new V.TorusGeometry(u*0.25,u*0.025,4,8,2).rotateZ(-0.3),M('bone'),0,0,0,0,R()*3,0);});
+  P('pelvis','vientre lomo cola','1',(g,u,R,M)=>{add(g,new V.TorusGeometry(u*0.18,u*0.06,5,10,Math.PI*1.4).rotateX(Math.PI/2),M('bone'));add(g,ball(u*0.08,6,4).scale(1.6,0.6,1),M('bone'),0,u*0.02,-u*0.15);});
+  P('femur_clavado','lomo hombros costados pecho cabeza','',(g,u,R,M)=>{const m=M('bone');add(g,cy(u*0.03,u*0.03,u*0.6,5),m,0,0,0,(R()-0.5)*0.6,0,0);add(g,ball(u*0.06,6,4),m,0,u*0.6,0);add(g,ball(u*0.05,6,4),m,u*0.04,u*0.6,0);});
+  P('mandibula_suelta','pecho cuello vientre costados','1',(g,u,R,M)=>{add(g,new V.TorusGeometry(u*0.18,u*0.04,4,10,Math.PI).rotateX(Math.PI/2),M('bone'));for(let i=0;i<8;i++){const a=i/7*Math.PI;add(g,cone(u*0.015,u*0.05,3),M('bone'),Math.cos(a)*u*0.18,u*0.03,Math.sin(a)*u*0.18);}});
+  P('collar_dientes','cuello pecho brazos piernas','1',(g,u,R,M)=>{add(g,new V.TorusGeometry(u*0.3,u*0.008,3,16).rotateX(Math.PI/2),M('dark'));for(let i=0;i<12;i++){const a=i/12*6.283;add(g,cone(u*0.02,u*0.08,4).rotateX(Math.PI),M('bone'),Math.cos(a)*u*0.3,0,Math.sin(a)*u*0.3);}});
+  P('craneos_racimo','hombros lomo costados','1',(g,u,R,M)=>{for(let i=0;i<4;i++){const x=(R()-0.5)*u*0.4,z=(R()-0.5)*u*0.4,s=u*(0.06+R()*0.04);add(g,ball(s,7,5),M('bone'),x,s,z);for(const k of [-1,1])add(g,ball(s*0.25,4,3),M('pupil'),x+k*s*0.35,s*1.05,z+s*0.8);}});
+  P('hueso_partido','brazos piernas costados lomo','',(g,u,R,M)=>{add(g,cy(u*0.04,u*0.05,u*0.15,6),M('flesh'));add(g,new V.ConeGeometry(u*0.035,u*0.3,4).translate(0,u*0.3,0),M('bone'));add(g,new V.ConeGeometry(u*0.02,u*0.18,3).translate(u*0.03,u*0.24,0),M('bone'),0,0,0,0,0,-0.3);});
+  P('esternon','pecho','1',(g,u,R,M)=>{add(g,new V.BoxGeometry(u*0.08,u*0.02,u*0.5),M('bone'),0,u*0.01,0);for(let i=0;i<4;i++)for(const s of [-1,1])add(g,new V.BoxGeometry(u*0.2,u*0.02,u*0.03),M('bone'),s*u*0.13,u*0.01,(i-1.5)*u*0.12,0,s*0.25,0);});
+  // ---- crecimientos orgánicos ----
+  P('quiste_venoso',BODY+' cabeza','',(g,u,R,M)=>{add(g,ball(u*0.2,8,6),M('sac'),0,u*0.12,0);for(let i=0;i<4;i++)add(g,new V.TorusGeometry(u*0.2,u*0.012,3,10,2).rotateY(i*1.6),M('flesh'),0,u*0.12,0,0,0,0.3);});
+  P('bulbo','lomo hombros cabeza','',(g,u,R,M)=>{add(g,cy(u*0.04,u*0.06,u*0.2,6),M('skin'));add(g,ball(u*0.12,8,6),M('glow'),0,u*0.28,0);});
+  P('ampollas',BODY+' brazos piernas cabeza','m',(g,u,R,M)=>{for(let i=0;i<4;i++)add(g,new V.SphereGeometry(u*(0.04+R()*0.04),6,4,0,6.283,0,1.5),M('sac'),(R()-0.5)*u*0.3,0,(R()-0.5)*u*0.3);});
+  P('verrugas',ALL+' cara','m',(g,u,R,M)=>{for(let i=0;i<3;i++)add(g,new V.DodecahedronGeometry(u*(0.03+R()*0.03),0),M('skin2'),(R()-0.5)*u*0.2,0,(R()-0.5)*u*0.2);});
+  P('ganglios','cuello costados pecho brazos','',(g,u,R,M)=>{for(let i=0;i<5;i++)add(g,ball(u*(0.05+R()*0.03),6,4),M('sac'),(i-2)*u*0.09,Math.sin(i)*u*0.02,0);add(g,cy(u*0.01,u*0.01,u*0.45,3).rotateZ(Math.PI/2),M('flesh'),0,0,0);});
+  P('cordon','vientre pecho cuello','1',(g,u,R,M)=>{chain(g,8,u*0.12,u*0.035,u*0.03,-0.25,M('flesh'),0.35);});
+  P('intestino','vientre costados lomo','1',(g,u,R,M)=>{add(g,new V.TorusKnotGeometry(u*0.18,u*0.05,48,6,2,3).scale(1,0.6,1),M('flesh'),0,u*0.1,0);});
+  P('corazon','pecho costados lomo','1',(g,u,R,M)=>{add(g,ball(u*0.16,8,6).scale(1,1.2,0.9),M('flesh'),0,u*0.15,0);for(let i=0;i<3;i++)add(g,cy(u*0.035,u*0.03,u*0.2,6),M('flesh'),(i-1)*u*0.07,u*0.3,0,0,0,(i-1)*0.4);});
+  P('pulmon','costados lomo pecho','s',(g,u,R,M)=>{add(g,ball(u*0.18,8,6).scale(0.7,1.3,0.8),M('sac'),0,u*0.1,0);for(let i=0;i<3;i++)add(g,cy(u*0.01,u*0.015,u*0.2,4),M('flesh'),(i-1)*u*0.05,u*0.2,0,0,0,(i-1)*0.5);});
+  P('venas',ALL,'',(g,u,R,M)=>{for(let i=0;i<3;i++){const s=new V.Group();s.rotation.set(1.4,i*2.1,0);g.add(s);chain(s,4,u*0.12,u*0.018,u*0.008,0.25,M('flesh'),0.4);}});
+  P('membrana','costados hombros lomo','s',(g,u,R,M)=>{add(g,new V.ConeGeometry(u*0.35,u*0.5,3).scale(1,1,0.04).translate(0,u*0.25,0),M('skin2'),0,0,0,0,0,-0.4);add(g,cy(u*0.015,u*0.01,u*0.55,4),M('bone'),0,0,0,0,0,-0.4);});
+  P('papada','cuello pecho','1',(g,u,R,M)=>{add(g,ball(u*0.3,9,6).scale(1,0.7,0.6),M('skin'),0,u*0.05,0);});
+  P('pliegues',BODY+' cuello','',(g,u,R,M)=>{for(let i=0;i<3;i++)add(g,new V.TorusGeometry(u*0.2,u*0.03,4,10,Math.PI).rotateX(Math.PI/2),M('skin'),0,i*u*0.04,i*u*0.05);});
+  P('branquias_abiertas','costados cuello','s',(g,u,R,M)=>{for(let i=0;i<4;i++){add(g,new V.BoxGeometry(u*0.3,u*0.02,u*0.04),M('skin'),0,u*0.02,(i-1.5)*u*0.06,0.5,0,0);add(g,new V.BoxGeometry(u*0.28,u*0.01,u*0.03),M('flesh'),0,0,(i-1.5)*u*0.06+u*0.02);}});
+  P('poros',ALL,'m',(g,u,R,M)=>{for(let i=0;i<3;i++){const x=(R()-0.5)*u*0.25,z=(R()-0.5)*u*0.25;add(g,cy(u*0.03,u*0.045,u*0.04,6),M('skin2'),x,0,z);add(g,new V.CircleGeometry(u*0.02,6).rotateX(-Math.PI/2),M('pupil'),x,u*0.041,z);}});
+  P('nubes_carne',BODY+' cabeza','m',(g,u,R,M)=>{add(g,ball(u*0.05,6,4).scale(1,1.6,1),M('flesh'),0,u*0.05,0);});
+  P('larvas',BODY,'m',(g,u,R,M)=>{for(let i=0;i<3;i++){const a=R()*6;add(g,ball(u*0.03,6,4).scale(2.2,0.8,0.8),M('fung'),Math.cos(a)*u*0.1,u*0.02,Math.sin(a)*u*0.1,0,a,0);}});
+  P('huevos','lomo vientre hombros costados','',(g,u,R,M)=>{for(let i=0;i<5;i++)add(g,ball(u*0.07,7,5).scale(1,1.3,1),M(i%2?'sac':'fung'),(R()-0.5)*u*0.35,u*0.06,(R()-0.5)*u*0.35);});
+  // ---- plantas y hongos ----
+  P('liquen',ALL,'m',(g,u,R,M)=>{for(let i=0;i<3;i++)add(g,new V.CylinderGeometry(u*0.06,u*0.06,u*0.01,7),M('moss'),(R()-0.5)*u*0.2,u*0.005,(R()-0.5)*u*0.2);});
+  P('helecho','lomo hombros cabeza costados','',(g,u,R,M)=>{add(g,cy(u*0.008,u*0.012,u*0.5,3),M('moss'),0,0,0,0.3,0,0);for(let i=0;i<6;i++)for(const s of [-1,1])add(g,new V.BoxGeometry(u*0.12,u*0.005,u*0.03).translate(s*u*0.06,0,0),M('moss'),0,u*(0.08+i*0.07),u*(0.02+i*0.02),0,0,s*0.3);});
+  P('enredadera',ALL,'',(g,u,R,M)=>{const s=new V.Group();s.rotation.x=1.45;g.add(s);chain(s,7,u*0.1,u*0.012,u*0.008,0.15,M('moss'),0.6);for(let i=0;i<4;i++)add(g,ball(u*0.03,5,3).scale(1,0.3,1.6),M('moss'),(R()-0.5)*u*0.3,u*0.02,R()*u*0.5);});
+  P('espinos','lomo hombros brazos cabeza','',(g,u,R,M)=>{chain(g,4,u*0.15,u*0.025,u*0.01,0.3,M('horn'),0.8);for(let i=0;i<6;i++)add(g,cone(u*0.008,u*0.05,3),M('horn'),(R()-0.5)*u*0.15,u*(0.1+R()*0.4),(R()-0.5)*u*0.15,R()*3,0,R()*3);});
+  P('cactus','lomo hombros cabeza','',(g,u,R,M)=>{add(g,cy(u*0.06,u*0.07,u*0.35,8),M('moss'));add(g,cy(u*0.035,u*0.04,u*0.15,6),M('moss'),u*0.07,u*0.15,0,0,0,-1.2);for(let i=0;i<8;i++)add(g,cone(u*0.004,u*0.03,3),M('bone'),Math.cos(i)*u*0.065,u*(0.05+i*0.04),Math.sin(i)*u*0.065,0,0,Math.cos(i)*1.5);});
+  P('hongo_repisa',BODY+' piernas','',(g,u,R,M)=>{for(let i=0;i<3;i++)add(g,new V.CylinderGeometry(u*(0.15-i*0.03),u*(0.17-i*0.03),u*0.03,10,1,false,0,Math.PI),M('fung'),0,u*0.02,i*u*0.08,Math.PI/2,0,0);});
+  P('moho',ALL+' cara','m',(g,u,R,M)=>{for(let i=0;i<6;i++)add(g,ball(u*0.02,4,3),M(i%2?'fung':'moss'),(R()-0.5)*u*0.2,0,(R()-0.5)*u*0.2);});
+  P('flor_carnivora','lomo hombros cabeza','',(g,u,R,M)=>{add(g,cy(u*0.015,u*0.02,u*0.35,4),M('moss'));for(const s of [-1,1]){add(g,new V.SphereGeometry(u*0.1,8,4,0,Math.PI).scale(1,1,0.5),M('flesh'),0,u*0.38,0,0,s>0?0:Math.PI,s*0.5);for(let k=0;k<5;k++)add(g,cone(u*0.005,u*0.04,3),M('bone'),(k-2)*u*0.035,u*0.38+u*0.08,s*u*0.04);}});
+  P('algas','vientre costados cola cabeza','',(g,u,R,M)=>{for(let i=0;i<4;i++)add(g,new V.BoxGeometry(u*0.04,u*(0.4+R()*0.3),u*0.005).translate(0,u*0.2,0),M('moss'),(i-1.5)*u*0.06,0,0,0.2,0,(R()-0.5)*0.4);});
+  P('vainas','lomo hombros costados','',(g,u,R,M)=>{for(let i=0;i<3;i++){add(g,cy(u*0.008,u*0.008,u*0.15,3),M('moss'),(i-1)*u*0.08,0,0,0,0,(i-1)*0.4);add(g,ball(u*0.05,6,4).scale(0.7,1.4,0.7),M('horn'),(i-1)*u*0.13,u*0.17,0);}});
+  // ---- minerales ----
+  P('geoda','lomo hombros pecho costados','',(g,u,R,M)=>{add(g,new V.SphereGeometry(u*0.18,8,5,0,6.283,0,1.3),M('skin2'));for(let i=0;i<7;i++)add(g,new V.ConeGeometry(u*0.03,u*0.12,4).translate(0,u*0.06,0),M('crystal'),(R()-0.5)*u*0.2,u*0.04,(R()-0.5)*u*0.2,(R()-0.5),0,(R()-0.5));});
+  P('piedras',ALL,'m',(g,u,R,M)=>{add(g,new V.DodecahedronGeometry(u*0.07,0).scale(1,0.6,1),M('rock'),0,u*0.02,0,R(),R(),R());});
+  P('obsidiana','lomo hombros cabeza brazos','m',(g,u,R,M)=>{add(g,new V.TetrahedronGeometry(u*0.12,0).scale(0.4,1.6,0.8),M('obsid'),0,u*0.1,0,R()*0.5,R()*3,R()*0.5);});
+  P('cubos_sal','lomo hombros cabeza costados','',(g,u,R,M)=>{for(let i=0;i<5;i++){const s=u*(0.04+R()*0.06);add(g,new V.BoxGeometry(s,s,s),M('salt'),(R()-0.5)*u*0.25,s*0.4,(R()-0.5)*u*0.25,R(),R(),R());}});
+  P('ambar','pecho lomo costados cabeza','',(g,u,R,M)=>{add(g,ball(u*0.14,8,6).scale(1,0.7,1),M('amber'),0,u*0.05,0);add(g,new V.BoxGeometry(u*0.08,u*0.02,u*0.03),M('pupil'),0,u*0.06,0);});
+  P('brasas',BODY+' cabeza brazos','m',(g,u,R,M)=>{for(let i=0;i<3;i++)add(g,new V.DodecahedronGeometry(u*0.035,0),M(i?'ember':'dark'),(R()-0.5)*u*0.2,u*0.01,(R()-0.5)*u*0.2);});
+  P('estalactitas','vientre cuello brazos','m',(g,u,R,M)=>{add(g,cone(u*0.04,u*(0.25+R()*0.3),5),M('rock'));});
+  P('perlas',ALL,'m',(g,u,R,M)=>{add(g,new V.SphereGeometry(u*0.06,8,4,0,6.283,0,1.4),M('flesh'));add(g,ball(u*0.04,8,6),M('pearl'),0,u*0.02,0);});
+  // ---- piezas mecánicas ----
+  P('engranajes','lomo hombros pecho costados cabeza','',(g,u,R,M)=>{for(let i=0;i<2;i++){const r=u*(0.12+i*0.06),x=i*u*0.18;add(g,new V.CylinderGeometry(r,r,u*0.03,10),M('metal'),x,u*0.02+i*u*0.01,0);for(let k=0;k<10;k++){const a=k/10*6.283;add(g,new V.BoxGeometry(u*0.03,u*0.03,u*0.04),M('metal'),x+Math.cos(a)*r,u*0.02+i*u*0.01,Math.sin(a)*r,0,-a,0);}}});
+  P('antena_radio','cabeza hombros lomo','1',(g,u,R,M)=>{add(g,cy(u*0.012,u*0.02,u*0.9,4),M('metal'));for(let i=1;i<4;i++)add(g,new V.BoxGeometry(u*(0.4-i*0.08),u*0.01,u*0.01),M('metal'),0,u*i*0.22,0);add(g,ball(u*0.025,5,4),M('ember'),0,u*0.9,0);});
+  P('altavoz','pecho costados lomo hombros','',(g,u,R,M)=>{add(g,new V.CylinderGeometry(u*0.16,u*0.08,u*0.12,10,1,true),M('dark'));add(g,cy(u*0.05,u*0.05,u*0.03,8),M('metal'),0,u*0.02,0);add(g,new V.TorusGeometry(u*0.16,u*0.015,4,10).rotateX(Math.PI/2),M('metal'),0,u*0.12,0);});
+  P('valvula','pecho costados lomo','',(g,u,R,M)=>{add(g,cy(u*0.03,u*0.03,u*0.2,6),M('metal'));add(g,new V.TorusGeometry(u*0.1,u*0.015,4,10).rotateX(Math.PI/2),M('red'),0,u*0.2,0);for(let k=0;k<3;k++)add(g,new V.BoxGeometry(u*0.2,u*0.01,u*0.01),M('red'),0,u*0.2,0,0,k,0);});
+  P('manguera','lomo costados hombros pecho','1',(g,u,R,M)=>{add(g,new V.TorusGeometry(u*0.3,u*0.035,5,12,Math.PI*1.2),M('dark'),0,0,0,0,R()*3,0);});
+  P('cables','lomo hombros cuello vientre brazos','',(g,u,R,M)=>{for(let i=0;i<4;i++){const s=new V.Group();s.position.x=(i-1.5)*u*0.04;s.rotation.set(Math.PI*0.9,0,(i-1.5)*0.1);g.add(s);chain(s,4,u*0.12,u*0.01,u*0.01,0.1*(R()-0.5),M(i%2?'dark':'red'),0);}});
+  P('bombilla','cabeza hombros lomo','',(g,u,R,M)=>{add(g,cy(u*0.04,u*0.04,u*0.06,8),M('metal'));add(g,ball(u*0.08,8,6).scale(1,1.3,1),M('glow'),0,u*0.15,0);});
+  P('reloj','pecho cabeza costados lomo','1',(g,u,R,M)=>{add(g,cy(u*0.18,u*0.18,u*0.03,14),M('gold'));add(g,cy(u*0.16,u*0.16,u*0.005,14),M('paper'),0,u*0.03,0);add(g,new V.BoxGeometry(u*0.01,u*0.005,u*0.12).translate(0,0,u*0.06),M('pupil'),0,u*0.037,0,0,R()*6,0);add(g,new V.BoxGeometry(u*0.012,u*0.005,u*0.08).translate(0,0,u*0.04),M('pupil'),0,u*0.037,0,0,R()*6,0);});
+  P('lente_camara','cabeza cara pecho hombros','',(g,u,R,M)=>{add(g,cy(u*0.07,u*0.09,u*0.15,10),M('dark'));add(g,cy(u*0.06,u*0.06,u*0.01,10),M('glass'),0,u*0.15,0);add(g,ball(u*0.02,5,4),M('ember'),u*0.09,u*0.08,0);});
+  P('ventilador','lomo pecho costados','1',(g,u,R,M)=>{add(g,new V.TorusGeometry(u*0.2,u*0.02,4,12).rotateX(Math.PI/2),M('metal'));for(let k=0;k<5;k++)add(g,new V.BoxGeometry(u*0.18,u*0.008,u*0.06).translate(u*0.09,0,0),M('metal'),0,u*0.01,0,0.3,k/5*6.283,0);add(g,cy(u*0.03,u*0.03,u*0.03,8),M('dark'));});
+  P('piston','lomo hombros brazos piernas','',(g,u,R,M)=>{add(g,cy(u*0.05,u*0.05,u*0.25,8),M('metal'));add(g,cy(u*0.02,u*0.02,u*0.25,6),M('glass'),0,u*0.25,0);add(g,ball(u*0.035,6,4),M('metal'),0,u*0.5,0);});
+  P('enchufe','cola lomo costados cuello','',(g,u,R,M)=>{add(g,new V.BoxGeometry(u*0.1,u*0.08,u*0.06),M('paper'),0,u*0.04,0);for(const s of [-1,1])add(g,cy(u*0.008,u*0.008,u*0.06,4),M('gold'),s*u*0.025,u*0.08,0);});
+  P('rejilla','pecho costados lomo vientre','',(g,u,R,M)=>{add(g,new V.BoxGeometry(u*0.3,u*0.02,u*0.25),M('metal'),0,u*0.01,0);for(let i=0;i<5;i++)add(g,new V.BoxGeometry(u*0.26,u*0.01,u*0.015),M('pupil'),0,u*0.021,(i-2)*u*0.045);});
+  P('remaches',ALL,'m',(g,u,R,M)=>{for(let i=0;i<4;i++)add(g,new V.SphereGeometry(u*0.025,5,3,0,6.283,0,1.5),M('metal'),(i-1.5)*u*0.08,0,0);});
+  P('placa_numero','pecho lomo costados cabeza','',(g,u,R,M)=>{add(g,new V.BoxGeometry(u*0.3,u*0.015,u*0.12),M('metal'),0,u*0.01,0);for(let i=0;i<4;i++)add(g,new V.BoxGeometry(u*0.03,u*0.005,u*0.07),M('pupil'),(i-1.5)*u*0.06,u*0.02,0);});
+  P('jaula','cabeza pecho','1',(g,u,R,M)=>{for(let k=0;k<8;k++){const a=k/8*6.283;add(g,new V.TorusGeometry(u*0.3,u*0.01,3,10,Math.PI).rotateY(a),M('metal'),0,0,0);}add(g,new V.TorusGeometry(u*0.3,u*0.012,3,16).rotateX(Math.PI/2),M('metal'));});
+  // ---- objetos y telas ----
+  P('vendas',ALL+' cuello','',(g,u,R,M)=>{for(let i=0;i<3;i++)add(g,new V.TorusGeometry(u*0.15,u*0.025,3,10).rotateX(Math.PI/2).scale(1,1,0.6),M('cloth'),0,u*i*0.05,0,(R()-0.5)*0.3,0,(R()-0.5)*0.3);});
+  P('harapos',BODY+' brazos cuello','',(g,u,R,M)=>{for(let i=0;i<3;i++)add(g,new V.BoxGeometry(u*0.12,u*(0.3+R()*0.3),u*0.008).translate(0,u*0.18,0),M('cloth'),(i-1)*u*0.1,0,0,0.4,0,(R()-0.5)*0.4);});
+  P('cuerda',ALL+' cuello','',(g,u,R,M)=>{add(g,new V.TorusGeometry(u*0.16,u*0.018,3,10).rotateX(Math.PI/2),M('rope'));const e=chain(g,4,u*0.08,u*0.016,u*0.016,0.15,M('rope'),0);add(g,ball(u*0.035,5,4),M('rope'),e[0],e[1],e[2]);});
+  P('anzuelos',BODY+' cabeza brazos','m',(g,u,R,M)=>{add(g,cy(u*0.003,u*0.003,u*0.15,3),M('metal'));add(g,new V.TorusGeometry(u*0.03,u*0.005,3,8,Math.PI*1.3),M('metal'),u*0.03,u*0.15,0,0,0,Math.PI);});
+  P('cuchillos',BODY+' cabeza','',(g,u,R,M)=>{add(g,new V.BoxGeometry(u*0.05,u*0.25,u*0.008).translate(0,u*0.12,0),M('metal'),0,0,0,(R()-0.5)*0.5,0,(R()-0.5)*0.5);add(g,new V.BoxGeometry(u*0.04,u*0.12,u*0.03),M('wood'),0,u*0.3,0);});
+  P('tijeras',BODY+' cabeza','1',(g,u,R,M)=>{for(const s of [-1,1]){add(g,new V.BoxGeometry(u*0.02,u*0.25,u*0.005).translate(0,u*0.12,0),M('metal'),0,0,0,0,0,s*0.15);add(g,new V.TorusGeometry(u*0.04,u*0.008,3,8),M('red'),s*u*0.05,u*0.3,0);}});
+  P('flechas',BODY+' cabeza brazos piernas','',(g,u,R,M)=>{add(g,cy(u*0.008,u*0.008,u*0.5,3),M('wood'),0,0,0,(R()-0.5)*0.6,0,(R()-0.5)*0.6);for(let k=0;k<3;k++)add(g,new V.BoxGeometry(u*0.004,u*0.08,u*0.04),M('cloth'),0,u*0.44,0,0,k*2.1,0);});
+  P('alfileres',ALL+' cara','m',(g,u,R,M)=>{add(g,cy(u*0.003,u*0.003,u*0.1,3),M('metal'));add(g,ball(u*0.015,5,4),M(R()<0.5?'red':'glow'),0,u*0.1,0);});
+  P('botones',BODY+' cabeza cara','',(g,u,R,M)=>{for(let i=0;i<3;i++){add(g,cy(u*0.04,u*0.04,u*0.012,8),M(R()<0.5?'pupil':'red'),0,0,(i-1)*u*0.1);for(const s of [-1,1])add(g,new V.BoxGeometry(u*0.005,u*0.005,u*0.04),M('dark'),s*u*0.012,u*0.014,(i-1)*u*0.1,0,s*0.7,0);}});
+  P('cremallera','pecho costados vientre lomo cabeza','1',(g,u,R,M)=>{for(let i=0;i<12;i++)add(g,new V.BoxGeometry(u*0.04,u*0.012,u*0.02),M('metal'),(i%2-0.5)*u*0.02,0,(i-6)*u*0.03);add(g,new V.BoxGeometry(u*0.05,u*0.02,u*0.06),M('metal'),0,u*0.01,u*0.2);});
+  P('muneca','hombros lomo pecho costados','1',(g,u,R,M)=>{add(g,cy(u*0.05,u*0.06,u*0.15,6),M('cloth'),0,0,0);add(g,ball(u*0.06,7,5),M('porc'),0,u*0.2,0);for(const s of [-1,1])add(g,ball(u*0.012,4,3),M('pupil'),s*u*0.02,u*0.21,u*0.055);add(g,cy(u*0.015,u*0.015,u*0.1,4),M('porc'),u*0.06,u*0.08,0,0,0,0.8);});
+  P('mascara_rota','pecho cara costados lomo','1',(g,u,R,M)=>{add(g,new V.SphereGeometry(u*0.2,10,6,0,Math.PI*1.3,0.3,1.5).scale(1,1.2,0.5),M('porc'),0,u*0.05,0,-Math.PI/2,0,0);for(const s of [-1,1])add(g,new V.CircleGeometry(u*0.04,6).rotateX(-Math.PI/2),M('pupil'),s*u*0.07,u*0.11,u*0.03);});
+  P('etiqueta','brazos piernas cuello cola','',(g,u,R,M)=>{add(g,cy(u*0.003,u*0.003,u*0.12,3),M('rope'));add(g,new V.BoxGeometry(u*0.1,u*0.06,u*0.005),M('paper'),0,u*0.15,0);});
+  P('candado','cuello brazos piernas pecho','1',(g,u,R,M)=>{add(g,new V.BoxGeometry(u*0.12,u*0.1,u*0.05),M('gold'),0,u*0.14,0);add(g,new V.TorusGeometry(u*0.04,u*0.01,3,8,Math.PI),M('metal'),0,u*0.19,0);});
+  P('campanita','cuello cola brazos cabeza','',(g,u,R,M)=>{add(g,new V.CylinderGeometry(u*0.06,u*0.02,u*0.08,8,1,true).translate(0,u*0.1,0),M('gold'));add(g,ball(u*0.015,4,3),M('dark'),0,u*0.14,0);add(g,cy(u*0.003,u*0.003,u*0.06,3),M('rope'));});
+  P('cruz','lomo hombros cabeza pecho','1',(g,u,R,M)=>{add(g,bx(u*0.04,u*0.5,u*0.03),M('wood'),0,0,0,(R()-0.5)*0.3,0,(R()-0.5)*0.3);add(g,new V.BoxGeometry(u*0.25,u*0.04,u*0.03),M('wood'),0,u*0.35,0);});
+  // ---- rarezas ----
+  P('orbes','hombros lomo cabeza','',(g,u,R,M)=>{for(let i=0;i<3;i++){const a=i*2.1,x=Math.cos(a)*u*0.15,z=Math.sin(a)*u*0.15;add(g,cy(u*0.004,u*0.004,u*0.35,3),M('dark'),x,0,z);add(g,ball(u*0.05,7,5),M('glow'),x,u*0.37,z);}});
+  P('espiral_carne','lomo hombros pecho costados','1',(g,u,R,M)=>{for(let i=0;i<14;i++){const a=i*0.6,r=u*0.02*i;add(g,ball(u*(0.03+i*0.003),5,4),M('flesh'),Math.cos(a)*r,u*0.03,Math.sin(a)*r);}});
+  P('halo_roto','cabeza','1',(g,u,R,M)=>{add(g,new V.TorusGeometry(u*0.3,u*0.02,4,16,Math.PI*1.6).rotateX(Math.PI/2),M('glow'),0,u*0.3,0);add(g,cy(u*0.004,u*0.004,u*0.3,3),M('dark'),u*0.3,0,0);});
+  P('hilos_rojos',ALL+' cara','',(g,u,R,M)=>{for(let i=0;i<4;i++)add(g,cy(u*0.003,u*0.003,u*(0.3+R()*0.4),3),M('red'),(R()-0.5)*u*0.1,0,(R()-0.5)*u*0.1,(R()-0.5)*1.2,0,(R()-0.5)*1.2);});
+  P('cubo_carne','lomo hombros costados vientre','1',(g,u,R,M)=>{add(g,new V.BoxGeometry(u*0.25,u*0.25,u*0.25).translate(0,u*0.1,0),M('flesh'),0,0,0,R(),R(),R());add(g,new V.BoxGeometry(u*0.27,u*0.05,u*0.27).translate(0,u*0.1,0),M('skin'),0,0,0,0.2,0,0.1);});
+  P('piramide_ojo','lomo cabeza hombros pecho','1',(g,u,R,M)=>{add(g,new V.ConeGeometry(u*0.2,u*0.3,4).translate(0,u*0.15,0),M('skin2'));eye(g,0,u*0.13,u*0.09,u*0.045,M);});
+  P('glifos',ALL+' cara','',(g,u,R,M)=>{for(let i=0;i<4;i++)add(g,new V.BoxGeometry(u*(0.05+R()*0.1),u*0.006,u*0.015),M('glow'),(R()-0.5)*u*0.25,u*0.003,(R()-0.5)*u*0.25,0,R()*3,0);});
+  P('corona_dedos','cabeza','1',(g,u,R,M)=>{for(let k=0;k<7;k++){const s=new V.Group();const a=k/7*6.283;s.position.set(Math.cos(a)*u*0.25,0,Math.sin(a)*u*0.25);s.rotation.set(Math.sin(a)*0.3,0,-Math.cos(a)*0.3);g.add(s);chain(s,3,u*0.08,u*0.022,u*0.016,0.4,M('skin'),a+1.57);}});
+  P('bocas_racimo','pecho costados vientre lomo','1',(g,u,R,M)=>{for(let i=0;i<5;i++){const x=(R()-0.5)*u*0.4,z=(R()-0.5)*u*0.4;add(g,new V.TorusGeometry(u*0.05,u*0.02,4,8).scale(1,1,0.4).rotateX(Math.PI/2),M('flesh'),x,0,z);for(let k=0;k<4;k++)add(g,cone(u*0.007,u*0.02,3),M('bone'),x+(k-1.5)*u*0.02,u*0.005,z);}});
+  P('nudo_carne','lomo hombros vientre cola','1',(g,u,R,M)=>{add(g,new V.TorusKnotGeometry(u*0.1,u*0.04,40,6,3,2),M('skin'),0,u*0.12,0);});
+  P('venas_luz',ALL,'',(g,u,R,M)=>{for(let i=0;i<3;i++){const s=new V.Group();s.rotation.set(1.5,i*2.1,0);g.add(s);chain(s,4,u*0.1,u*0.008,u*0.005,0.4*(R()-0.5),M('glow'),0.5);}});
+  P('vacio_negro','pecho lomo costados vientre','1',(g,u,R,M)=>{add(g,new V.CircleGeometry(u*0.16,14).rotateX(-Math.PI/2),M('pupil'),0,u*0.005,0);add(g,new V.TorusGeometry(u*0.17,u*0.02,4,14).rotateX(Math.PI/2),M('glow'));add(g,new V.TorusGeometry(u*0.21,u*0.008,3,14).rotateX(Math.PI/2),M('skin2'));});
+  P('cuerpo_incrustado','pecho costados lomo vientre','1',(g,u,R,M)=>{add(g,ball(u*0.1,7,5),M('skin2'),0,u*0.03,0);for(const s of [-1,1]){add(g,cy(u*0.02,u*0.02,u*0.25,5),M('skin2'),s*u*0.1,0,0,0,0,s*1.3);add(g,ball(u*0.012,4,3),M('pupil'),s*u*0.03,u*0.08,u*0.08);}add(g,new V.BoxGeometry(u*0.05,u*0.01,u*0.01),M('pupil'),0,u*0.05,u*0.1);});
+  P('lenguas_racimo','pecho vientre cara cuello','1',(g,u,R,M)=>{for(let i=0;i<3;i++){const s=new V.Group();s.rotation.set(0.5,i*2.1,0);g.add(s);chain(s,4,u*0.1,u*0.035,u*0.02,0.4,M('flesh'),0);}});
+  P('cola_extra','cola lomo vientre','',(g,u,R,M)=>{chain(g,6,u*0.18,u*0.05,u*0.01,0.2,M('skin'),0.1);});
+  P('cola_punta_lanza','cola lomo','1',(g,u,R,M)=>{chain(g,4,u*0.15,u*0.03,u*0.02,0.1,M('skin'),0);add(g,new V.ConeGeometry(u*0.07,u*0.2,4).scale(1,1,0.2).translate(0,u*0.7,u*0.06),M('bone'));});
+  P('cascabel','cola','1',(g,u,R,M)=>{for(let i=0;i<5;i++)add(g,ball(u*(0.07-i*0.008),6,4).scale(1,0.6,1),M('horn'),0,i*u*0.07,0);});
+  P('pluma_cola','cola lomo cabeza','',(g,u,R,M)=>{add(g,cy(u*0.005,u*0.008,u*0.6,3),M('bone'),0,0,0,-0.3,0,0);for(let i=0;i<8;i++)for(const s of [-1,1])add(g,new V.BoxGeometry(u*0.08,u*0.004,u*0.02).translate(s*u*0.04,0,0),M('dark'),0,u*(0.15+i*0.055),-u*(0.05+i*0.017),0,0,s*0.4);});
+})();
 const CRX_LIST=[];for(const k in CRX_DEF)for(const p of CRX_DEF[k].split(' '))CRX_LIST.push(k+'@'+p);
 function crExtras(E){const q=rng(E.seed+90210),qr=(a,b)=>a+q()*(b-a);if(q()<0.22||window.__noCRX)return;const C=E.C,V=THREE;
   // materiales compartidos de esta criatura (pocos y reutilizados para que se fundan)
   const op=m=>{if(!m.transparent)return m;const c=m.clone();c.transparent=false;c.opacity=1;c.depthWrite=true;return c;},MC={skin:op(E.skin),skin2:op(E.skin2),bone:E.bone,dark:op(E.dark)},ph=(c,s,o)=>new V.MeshPhongMaterial(Object.assign({color:c,shininess:s},o||{}));
   const M=k=>MC[k]||(MC[k]=k==='horn'?ph(new V.Color(0x2a2018).lerp(E.col,0.25),40,{specular:0x332a22}):k==='glow'?new V.MeshBasicMaterial({color:E.glowC.clone()}):k==='chitin'?ph(E.col.clone().multiplyScalar(0.45),120,{specular:0x555555}):
     k==='flesh'?ph(0x7a2a2a,90,{specular:0x553333}):k==='nail'?ph(0xc8b890,30):k==='metal'?ph(0x6a6660,100,{specular:0x888888}):k==='crystal'?ph(E.glowC.clone().lerp(new V.Color(0xffffff),0.4),200,{specular:0xffffff,emissive:E.glowC.clone().multiplyScalar(0.35),flatShading:true}):
-    k==='fung'?ph(0xd8d0b0,5):k==='eyeW'?ph(0xe8e4d8,120,{specular:0x888888}):k==='pupil'?new V.MeshBasicMaterial({color:0x050505}):k==='wax'?ph(0xe8dcc0,60,{emissive:0x1a140a}):k==='flame'?new V.MeshBasicMaterial({color:0xffb040}):k==='sac'?ph(E.col2.clone().lerp(new V.Color(0xd8a0a0),0.5),150,{specular:0x999999}):k==='moss'?ph(0x3a5a2a,5):E.skin);
+    k==='fung'?ph(0xd8d0b0,5):k==='eyeW'?ph(0xe8e4d8,120,{specular:0x888888}):k==='pupil'?new V.MeshBasicMaterial({color:0x050505}):k==='wax'?ph(0xe8dcc0,60,{emissive:0x1a140a}):k==='flame'?new V.MeshBasicMaterial({color:0xffb040}):k==='sac'?ph(E.col2.clone().lerp(new V.Color(0xd8a0a0),0.5),150,{specular:0x999999}):k==='moss'?ph(0x3a5a2a,5):k==='rock'?ph(0x6a6660,8):k==='obsid'?ph(0x0c0a10,180,{specular:0x777777,flatShading:true}):k==='salt'?ph(0xe8e4dc,40):k==='amber'?ph(0xc87a1a,150,{emissive:0x3a1a00,specular:0xffcc88}):
+    k==='ember'?new V.MeshBasicMaterial({color:0xff6a1a}):k==='pearl'?ph(0xf0ece4,200,{specular:0xffffff}):k==='red'?ph(0x8a0a0a,40):k==='gold'?ph(0xb8902a,140,{specular:0xffe0a0}):k==='paper'?ph(0xd8d0b8,5):k==='glass'?ph(0x1a2a30,200,{specular:0xffffff}):
+    k==='cloth'?ph(0xb8ae98,4):k==='rope'?ph(0x8a7250,6):k==='wood'?ph(0x5a3e26,10):k==='porc'?ph(0xece6dc,110,{specular:0x999999}):E.skin);
   const {Hb,hr,tw,torsoTop,backPts,neckDir,body,head}=E,front=neckDir==='front';
   // anclas sobre la piel real: se toma un vértice de las mallas de piel (torso, cabeza o extremidad) y su normal, en el espacio del padre
   const skinM=new Set([E.skin,E.skin2,E.dark]),skip=new Set();C.legs.forEach(l=>l.hip&&skip.add(l.hip));C.arms.forEach(a=>a.sh&&skip.add(a.sh));C.tend.forEach(t=>t.g&&skip.add(t.g));if(head.parent)skip.add(head.parent);skip.add(head);
@@ -3406,9 +3580,9 @@ function crExtras(E){const q=rng(E.seed+90210),qr=(a,b)=>a+q()*(b-a);if(q()<0.22
     cola:()=>{const T2=C.tend.filter(t=>t.tail);if(!T2.length)return null;const t=T2[Math.floor(q()*T2.length)];const s=samp(t.g,0,(p,n)=>n.y>0.2,20);if(s)s.lim=Hb*0.035;return s;}};
   const nT=1+(q()<0.55?1:0)+(q()<0.3?1:0)+(q()<0.12?1:0),used=[];C.parts.piezas=used;const up=new V.Vector3(0,1,0);
   for(let t=0;t<nT;t++){let pick=null;for(let tries=0;tries<8&&!pick;tries++){const c=CRX_LIST[Math.floor(q()*CRX_LIST.length)];const [k,pl]=c.split('@');if(used.some(u=>u.startsWith(k+'@')))continue;if(!AN[pl]())continue;pick=[k,pl];}if(!pick)continue;
-    const [k,pl]=pick;used.push(k+'@'+pl);const fn=CRX_T[k];const sym=['hombros','cara','costados'].includes(pl)||(pl==='cabeza'&&/cuernos|astas|orejas|antena|ojo_ped|picos/.test(k));
-    const many=/espinas|puas|percebes|pustulas|clavos|placas|esquirlas|tumores|agujeros|cerdas|escamas|ojos_racimo|tornillos|parches|musgo|hongos|cristales|suturas|velas|glandulas|vertebras/.test(k);ridge=pl==='lomo'&&/espinas|placas|puas|vertebras|aleta/.test(k);
-    let n=many?3+Math.floor(q()*6):1+Math.floor(q()*(sym?1:3));if(sym)n=Math.max(2,n-(n%2));if(k==='caparazon'||k==='capucha_piel')n=1;
+    const [k,pl]=pick;used.push(k+'@'+pl);const fn=CRX_T[k];const fl=CRX_F[k]||'',sym=fl==='s'||(fl!=='1'&&['hombros','cara','costados'].includes(pl))||(pl==='cabeza'&&/cuernos|astas|orejas|antena|ojo_ped|picos/.test(k));
+    const many=fl==='m'||/espinas|puas|percebes|pustulas|clavos|placas|esquirlas|tumores|agujeros|cerdas|escamas|ojos_racimo|tornillos|parches|musgo|hongos|cristales|suturas|velas|glandulas|vertebras/.test(k);ridge=pl==='lomo'&&/espinas|placas|puas|vertebras|aleta/.test(k);
+    let n=many?3+Math.floor(q()*6):1+Math.floor(q()*(sym?1:3));if(sym)n=Math.max(2,n-(n%2));if(k==='caparazon'||k==='capucha_piel'||fl==='1')n=1;
     let mirror=null;
     for(let i=0;i<n;i++){let A2;if(sym&&i%2===1&&mirror){A2={par:mirror.par,p:mirror.p.clone().setX(-mirror.p.x),n:mirror.n.clone().setX(-mirror.n.x),lim:mirror.lim};}else{A2=AN[pl]();if(!A2)break;mirror=A2;}
       const hd=A2.par===head;let u=(hd?hr*qr(1.1,1.7):A2.lim?A2.lim*qr(2.8,4):Hb*qr(0.18,0.3))*(k==='caparazon'?2.2:k==='capucha_piel'?2.8:1);if(many)u*=0.75;
