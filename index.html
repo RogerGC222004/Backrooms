@@ -880,7 +880,7 @@ float ripSum(vec3 wp, inout vec2 g, out float foam){
   return h;
 }
 #if BIGW
-uniform vec4 uBig[4]; uniform float uSwell;
+uniform vec4 uBig[4]; uniform float uSwell; uniform vec4 uGlowW;
 float calmK(vec2 p){ return smoothstep(15.0,90.0,length(p)); }
 float bigSum(vec2 p, inout vec2 g, out float crest){
   float h=0.0; crest=0.0;
@@ -906,7 +906,7 @@ float bigSum(vec2 p, inout vec2 g, out float crest){
 function makeWaterMat(o){
   const U={uT:{value:0},uA:{value:o.A},uRip:{value:ripples},uRipY:{value:ripY},uDepth:{value:o.depth?o.depth.tex:null},uRect:{value:o.depth?o.depth.rect:new THREE.Vector4(0,0,1,1)},uDepthC:{value:o.depthC||2},
     uShallow:{value:new THREE.Color(o.shallow)},uDeep:{value:new THREE.Color(o.deep)},uDeepD:{value:o.deepD},uSky:{value:new THREE.Color(o.sky||0x101418)},uSkyK:{value:o.skyK==null?0.6:o.skyK},
-    uDetail:{value:o.detail},uTile:{value:o.tile||6},uFoamK:{value:o.foam},uOpacity:{value:o.opacity},uBig:{value:o.big||[new THREE.Vector4(),new THREE.Vector4(),new THREE.Vector4(),new THREE.Vector4()]},uSwell:{value:o.swell||0}};
+    uDetail:{value:o.detail},uTile:{value:o.tile||6},uFoamK:{value:o.foam},uOpacity:{value:o.opacity},uBig:{value:o.big||[new THREE.Vector4(),new THREE.Vector4(),new THREE.Vector4(),new THREE.Vector4()]},uSwell:{value:o.swell||0},uGlowW:{value:new THREE.Vector4(0,0,1,0)}};
   const m=new THREE.MeshPhongMaterial({color:0xffffff,transparent:true,depthWrite:false,side:THREE.DoubleSide,shininess:o.shin||110,specular:o.spec==null?0x8899aa:o.spec});
   m.defines={RIP_LOOP:lowQ()?0:isTouch?5:RIP_N,WATER_DETAIL:lowQ()?0:1,DEPTH_MODE:o.mode==='tex'?1:o.mode==='attr'?2:0,BIGW:o.big?1:0};
   m.userData.U=U;m.userData.A=o.A;
@@ -966,6 +966,9 @@ function makeWaterMat(o){
         normal=normalize((viewMatrix*vec4(wN,0.0)).xyz); if(!gl_FrontFacing) normal=-normal;`)
       .replace('gl_FragColor = vec4( outgoingLight, diffuseColor.a );',`vec3 wV=normalize(cameraPosition-vWp); float wFr=pow(1.0-abs(dot(wN,wV)),3.0);
         outgoingLight=mix(outgoingLight,uSky,clamp(wFr*.55*uSkyK,0.0,.5)*(1.0-wFoam));
+        #if BIGW
+        outgoingLight+=vec3(0.05,0.5,0.44)*uGlowW.w*exp(-pow(length(vWp.xz-uGlowW.xy)/uGlowW.z,2.0))*(0.7+0.3*sin(uT*1.7+vWp.x*0.03+vWp.z*0.02));
+        #endif
         gl_FragColor = vec4( outgoingLight, diffuseColor.a );`);};
   waterMats.push(m);return m;}
 // malla en anillos: muchos puntos cerca del jugador y pocos lejos
@@ -4459,7 +4462,7 @@ function l3FaunaBuild(G){const F={grp:new THREE.Group(),mer:[],med:[]};G.group.a
     [-1,1].forEach(sx=>{const pf=new THREE.Mesh(new THREE.ShapeGeometry(pecS,6),finM);pf.scale.set(sx*s,s,s);pf.rotation.set(-Math.PI/2+0.3,0,0);pf.position.set(sx*1.3*s,-0.6*s,-0.5*s);segs[1].add(pf);});
     const M={segs,N,L,NR,RG,R0:42+m*26,w:(m%2?-1:1)*(0.07+m*0.012),th:m*1.7,T:13+m*3.4,ph:m*3.1,was:false,cpts,curve,bpos,bgeo,body,fpos,fgeo,fins,head};M.update=()=>l3EelBody(M);F.mer.push(M);}
   // ---- medusas abisales: campana con borde ondulado y canales, brazos orales y muchos tentáculos ----
-  const mt=l3MedTex(),bellM=new THREE.MeshBasicMaterial({color:0x6fb8b0,map:mt,transparent:true,opacity:0.5,blending:THREE.AdditiveBlending,depthWrite:false,fog:false,side:THREE.DoubleSide}),
+  const mt=l3MedTex(),bellM=F.bellM=new THREE.MeshBasicMaterial({color:0x6fb8b0,map:mt,transparent:true,opacity:0.5,blending:THREE.AdditiveBlending,depthWrite:false,fog:false,side:THREE.DoubleSide}),
     armM=new THREE.MeshBasicMaterial({color:0x8a5a80,transparent:true,opacity:0.16,blending:THREE.AdditiveBlending,depthWrite:false,fog:false,side:THREE.DoubleSide});
   for(let m=0;m<5;m++){const g=new THREE.Group();g.visible=false;F.grp.add(g);
     const bg=new THREE.SphereGeometry(1,40,14,0,Math.PI*2,0,Math.PI*0.58),bp=bg.attributes.position,bu=bg.attributes.uv;
@@ -4488,7 +4491,7 @@ function l3FaunaTick(G,dt,mr,a){const F=G.fauna;if(!F)return;
   for(const M of F.med){if(!on){M.g.visible=false;M.live=false;continue;}
     if(!M.live||Math.hypot(M.x-rx,M.z-rz)>95){const ang=Math.random()*6.283,r=25+Math.random()*60;M.x=rx+Math.cos(ang)*r;M.z=rz+18+Math.sin(ang)*r;M.y=L3.SEA-6-Math.random()*8;M.live=true;}
     M.x+=Math.sin(t*0.13+M.ph)*dt*0.4;M.z+=Math.cos(t*0.11+M.ph)*dt*0.4;const pul=1+0.12*Math.sin(t*1.6+M.ph);
-    M.g.visible=true;M.g.position.set(M.x,M.y+Math.sin(t*0.8+M.ph)*0.4,M.z);M.b.scale.set(M.s*pul,M.s*0.7/pul,M.s*pul);
+    if(F.bellM)F.bellM.opacity=0.5*(1-0.85*(G.serNear||0));M.g.visible=(G.serNear||0)<0.95;M.g.position.set(M.x,M.y+Math.sin(t*0.8+M.ph)*0.4,M.z);M.b.scale.set(M.s*pul,M.s*0.7/pul,M.s*pul);
     for(const T of M.lines){const p=T.ln.geometry.attributes.position;for(let q=0;q<16;q++){const f=q/15,rr=M.s*0.8*(1-f*0.6);p.setXYZ(q,Math.cos(T.a)*rr+Math.sin(t*1.1+q*0.5+T.a)*f*0.9,-f*T.len,Math.sin(T.a)*rr+Math.cos(t*0.9+q*0.4+T.a)*f*0.9);}p.needsUpdate=true;}}}
 function l3Spray(G,x,z,n,big){const Z=G.ser;for(let q=0;q<n;q++){const o=Z.spr[Z.sprK];Z.sprK=(Z.sprK+1)%Z.spr.length;const a=Math.random()*6.283,r=Math.random()*60*big;
   o.s.position.set(x+Math.cos(a)*r,L3.SEA+5,z+Math.sin(a)*r);o.vx=Math.cos(a)*(8+Math.random()*20)*big;o.vz=Math.sin(a)*(8+Math.random()*20)*big;o.vy=(30+Math.random()*60)*big;o.life=5+Math.random()*4;o.sz=(40+Math.random()*70)*big;o.s.visible=true;}}
@@ -4508,19 +4511,83 @@ function l3StormTick(G,dt){const St=G.storm;if(!St)return;const cx=camera.positi
   // lluvia que sigue a la cámara
   for(let i=0;i<St.N;i++){let x=D[i*3]+wx*dt,y=D[i*3+1]+vy*dt,z=D[i*3+2]+wz*dt;if(y<-8){y+=48;x=(Math.random()-0.5)*70;z=(Math.random()-0.5)*70;}if(x<-35)x+=70;if(x>35)x-=70;if(z<-35)z+=70;if(z>35)z-=70;D[i*3]=x;D[i*3+1]=y;D[i*3+2]=z;
     const k=i*6;p[k]=cx+x;p[k+1]=cy+y;p[k+2]=cz+z;p[k+3]=cx+x-wx*0.045;p[k+4]=cy+y-vy*0.045;p[k+5]=cz+z-wz*0.045;}
-  St.rain.geometry.attributes.position.needsUpdate=true;St.rain.visible=S.camY>l3Surf(P.x,P.z);
+  St.rain.geometry.attributes.position.needsUpdate=true;St.rain.visible=S.camY>l3Surf(P.x,P.z)&&(G.hush||0)<0.5;
   // relámpagos: destello doble, rayo en el horizonte y trueno con retraso según la distancia
-  St.next-=dt;if(St.next<=0&&!S.l3wake){St.next=7+Math.random()*14;const ang=Math.random()*6.283,dist=500+Math.random()*1500,bx=cx+Math.cos(ang)*dist,bz=cz+Math.sin(ang)*dist;St.seq=[0,0.09,0.22,0.3];St.t=0;St.bx=bx;St.bz=bz;St.pow=0.6+Math.random()*0.6*(1-dist/2200);
+  St.next-=dt;if(St.next<=0&&(G.hush||0)>0.05)St.next=1.5;if(St.next<=0&&!S.l3wake){St.next=7+Math.random()*14;St.sil=l3SilFlash(G);const ang=Math.random()*6.283,dist=500+Math.random()*1500,bx=cx+Math.cos(ang)*dist,bz=cz+Math.sin(ang)*dist;St.seq=[0,0.09,0.22,0.3];St.t=0;St.bx=bx;St.bz=bz;St.pow=0.6+Math.random()*0.6*(1-dist/2200);
     const bp=St.bolt.geometry.attributes.position;let x=bx,y=700,z=bz;for(let i=0;i<26;i++){bp.setXYZ(i,x,y,z);x+=(Math.random()-0.5)*60;z+=(Math.random()-0.5)*60;y-=(700-L3.SEA)/25;}bp.needsUpdate=true;
     setTimeout(()=>{if(S.floor!==3)return;const v=clamp(1.3-dist/1600,0.25,1);noiseBurst(4.5,55,0.5*v);noiseBurst(2.5,160,0.25*v);tone(30,0,4,0.22*v,'sine');if(dist<900)S.scareShake=Math.max(S.scareShake||0,0.3);},dist/343*1000);}
   let f=0;if(St.seq.length){St.t+=dt;for(let i=0;i<St.seq.length;i+=2)if(St.t>=St.seq[i]&&St.t<St.seq[i+1])f=1;if(St.t>0.3)f=Math.max(0,1-(St.t-0.3)/0.6)*0.35;if(St.t>0.9)St.seq=[];}
-  St.flash=f*(St.pow||1);St.bolt.material.opacity=St.t<0.35?St.flash:0;
+  St.flash=f*(St.pow||1);if(G.scare){G.scare.sil.visible=!!St.sil&&St.flash>0.02;if(!St.seq.length)St.sil=false;}St.bolt.material.opacity=St.t<0.35?St.flash:0;
   G.hemi.intensity=0.34+St.flash*2.2;G.sunL.intensity=0.16+St.flash*0.9;G.dome.material.color.setScalar(1+St.flash*5);
   scene.fog.color.copy(G.fogC).lerp(_l3Flash,St.flash*0.5);scene.background.copy(scene.fog.color);
   // viento
   if(A.ctx&&A.noise&&!A.wind){const s=A.ctx.createBufferSource();s.buffer=A.noise;s.loop=true;s.playbackRate.value=1.6;const f2=A.ctx.createBiquadFilter();f2.type='bandpass';f2.frequency.value=900;f2.Q.value=0.6;const g=A.ctx.createGain();g.gain.value=0;s.connect(f2);f2.connect(g);g.connect(A.master);s.start();A.wind={s,f:f2,g};}
-  if(A.wind){const w=0.5+0.5*Math.sin(S.t*0.31)*Math.sin(S.t*0.13+2);A.wind.g.gain.setTargetAtTime(S.l3wake&&S.l3wake.t<3.2?0:0.035+0.05*w,A.ctx.currentTime,0.5);A.wind.f.frequency.setTargetAtTime(600+700*w,A.ctx.currentTime,0.5);}}
+  if(A.wind){const w=0.5+0.5*Math.sin(S.t*0.31)*Math.sin(S.t*0.13+2);A.wind.g.gain.setTargetAtTime(S.l3wake&&S.l3wake.t<3.2?0:(0.035+0.05*w)*(1-(G.hush||0)),A.ctx.currentTime,0.5);A.wind.f.frequency.setTargetAtTime(600+700*w,A.ctx.currentTime,0.5);}}
 const _l3Flash=new THREE.Color(0x8a9ab0);
+// ----- inquietud: silencio previo, golpes desde abajo, luces engañosas, siluetas en los relámpagos, restos, voces y agua que brilla -----
+function l3ScareBuild(G){const X={kick:0,kickT:28+Math.random()*20,lightT:45+Math.random()*30,voiceT:30+Math.random()*30,breathT:0,hush:0,sh:null};G.scare=X;
+  // sombra que pasa bajo el nadador
+  const sh=new THREE.Mesh(new THREE.CircleGeometry(1,28),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0,depthWrite:false,fog:false}));sh.rotation.x=-Math.PI/2;sh.scale.set(5,16,1);sh.renderOrder=3;sh.visible=false;G.group.add(sh);X.shadow=sh;
+  // luz engañosa en el horizonte
+  const lg=glowSprite(0xfff2c8,1,false);lg.renderOrder=4;lg.visible=false;G.group.add(lg);X.lure={s:lg,on:false,t:0,x:0,z:0,rev:-1};
+  // silueta que solo se ve con el destello de un relámpago: cuello y cabeza asomados
+  const sil=new THREE.Group();sil.visible=false;G.group.add(sil);const sm=new THREE.MeshBasicMaterial({color:0x020304});
+  const pts=[];for(let k=0;k<=10;k++){const t=k/10;pts.push(new THREE.Vector3(Math.sin(t*1.6)*60,t*300-20,-t*t*40));}
+  sil.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),30,40,10,false),sm));
+  const hd=new THREE.Mesh(new THREE.SphereGeometry(1,18,12),sm);hd.scale.set(46,30,130);hd.position.set(pts[10].x,pts[10].y+12,pts[10].z+80);hd.rotation.x=0.3;sil.add(hd);
+  [[-1,0],[1,0],[-1,1],[1,1]].forEach(([sx,k])=>{const e=glowSprite(0xffd870,26-k*6,false);e.position.set(pts[10].x+sx*40,pts[10].y+22-k*4,pts[10].z+110-k*28);e.material.opacity=0.95;sil.add(e);});
+  X.sil=sil;
+  // restos flotando a lo largo del trayecto: balsas desinfladas, chalecos, tablones, mochilas y linternas aún encendidas
+  X.deb=[];const R=rng(3131),rub=new THREE.MeshPhongMaterial({map:rep(l3RubberTex(),4,1),shininess:20,side:THREE.DoubleSide}),vest=new THREE.MeshLambertMaterial({color:0xd8601c}),strap=new THREE.MeshLambertMaterial({color:0xd8d0b8}),wood=lam(rep(gtex('wood'),1,1),0x6a4e34),bagM=new THREE.MeshLambertMaterial({color:0x3a4a2a}),blk=new THREE.MeshPhongMaterial({color:0x222222,shininess:60});
+  const loot=['linterna','pilas','bengala','barra','calmantes','pilas','agua','bengala'];let li=0;
+  for(let k=0;k<24;k++){const z=L3.DOCK+35+k*21+R()*12,side=R()<0.5?-1:1,x=side*(5+R()*32),g=new THREE.Group(),kind=k%5;
+    if(kind===0){const t=new THREE.Mesh(new THREE.TorusGeometry(1.7,0.22,8,24,Math.PI*1.5),rub);t.scale.set(1,1.6,0.35);t.rotation.x=-Math.PI/2;g.add(t);const fl=new THREE.Mesh(new THREE.CircleGeometry(1.5,16),rub);fl.rotation.x=-Math.PI/2;fl.scale.set(1,1.5,1);fl.position.y=-0.03;g.add(fl);}
+    else if(kind===1){const b=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.12,0.7),vest);g.add(b);[-0.15,0.15].forEach(zz=>{const s2=new THREE.Mesh(new THREE.BoxGeometry(0.58,0.13,0.05),strap);s2.position.z=zz;g.add(s2);});}
+    else if(kind===2){g.add(new THREE.Mesh(new THREE.BoxGeometry(0.3,0.08,2.4),wood));const b2=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.07,1.4),wood);b2.position.set(0.25,0.02,0.3);b2.rotation.y=0.5;g.add(b2);}
+    else if(kind===3){const b=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.22,0.55),bagM);g.add(b);const fl=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.06,0.3),bagM);fl.position.set(0,0.12,-0.1);fl.rotation.x=-0.4;g.add(fl);}
+    else{const b=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.065,0.32,10),blk);b.rotation.z=Math.PI/2;g.add(b);const gl=glowSprite(0xfff0c0,1.3,true);gl.position.x=0.2;g.add(gl);const beam=glowSprite(0xfff0c0,6,true);beam.material.opacity=0.22;beam.position.x=1.8;g.add(beam);g.userData.blink=true;}
+    g.position.set(x,L3.SEA,z);g.rotation.y=R()*6.28;G.group.add(g);const d={g,x,z,ph:R()*6.28};
+    // algunos traen algo que se puede recoger encima
+    if(kind!==2&&kind!==4&&li<loot.length){const key='l3-deb-'+k,id=loot[li++];if(!S.taken[key]){const m=makeItemMesh(id);m.userData.pick={id,key,dist:2.8};m.traverse(o=>{o.userData.root=m;});G.group.add(m);G.picks.push(m);d.pick=m;}}
+    X.deb.push(d);}}
+// susurros y una voz lejana: ruido filtrado en ráfagas cortas y un tono que baja como un lamento
+function l3Voice(){if(!A.ctx||!A.noise)return;const c=A.ctx,t0=c.currentTime,pan=c.createStereoPanner?c.createStereoPanner():null;if(pan){pan.pan.value=Math.random()*2-1;pan.connect(A.master);}const out=pan||A.master;
+  if(Math.random()<0.65){const n=4+Math.floor(Math.random()*5);for(let i=0;i<n;i++){const s=c.createBufferSource();s.buffer=A.noise;s.loop=true;const f=c.createBiquadFilter();f.type='bandpass';f.frequency.value=1800+Math.random()*1600;f.Q.value=3;const g=c.createGain(),st=t0+i*(0.18+Math.random()*0.2),d=0.12+Math.random()*0.18;
+      g.gain.setValueAtTime(0.0001,st);g.gain.linearRampToValueAtTime(0.025,st+d*0.3);g.gain.linearRampToValueAtTime(0.0001,st+d);s.connect(f);f.connect(g);g.connect(out);s.start(st);s.stop(st+d+0.05);}}
+  else{const o=c.createOscillator(),v=c.createOscillator(),vg=c.createGain(),f=c.createBiquadFilter(),g=c.createGain(),f0=230+Math.random()*80;o.type='sawtooth';o.frequency.setValueAtTime(f0,t0);o.frequency.linearRampToValueAtTime(f0*0.75,t0+2.4);v.frequency.value=5.5;vg.gain.value=6;v.connect(vg);vg.connect(o.frequency);
+    f.type='bandpass';f.frequency.value=700;f.Q.value=2;g.gain.setValueAtTime(0.0001,t0);g.gain.linearRampToValueAtTime(0.018,t0+0.6);g.gain.linearRampToValueAtTime(0.0001,t0+2.6);o.connect(f);f.connect(g);g.connect(out);o.start(t0);v.start(t0);o.stop(t0+2.7);v.stop(t0+2.7);}}
+function l3ScareTick(G,dt,mr,a){const X=G.scare;if(!X)return;const t=S.t;
+  // restos que flotan con las olas
+  for(const d of X.deb){const y=l3Surf(d.x,d.z);d.g.position.y=y+0.02;d.g.rotation.z=Math.sin(t*0.9+d.ph)*0.15;d.g.rotation.x=Math.cos(t*0.7+d.ph)*0.12;
+    if(d.g.userData.blink){const on=Math.sin(t*6+d.ph)>-0.7||Math.random()<0.4;for(let i=1;i<d.g.children.length;i++)d.g.children[i].visible=on;}
+    if(d.pick&&d.pick.parent)d.pick.position.set(d.x,y+0.16,d.z);}
+  // silencio antes del salto y del ataque: se calman las olas, la lluvia y el viento y solo se oye tu respiración
+  const hz=w=>clamp((a-(w-9))/1.2,0,1)*clamp((w+0.4-a)/0.4,0,1),want=mr&&!S.l3wake?Math.max(hz(L3.BREACH),hz(L3.SWALLOW)):0;
+  X.hush+=(want-X.hush)*Math.min(1,dt*(want>X.hush?2.5:8));G.hush=X.hush;
+  G.wA=0.62*(1-X.hush*0.85);G.swell=1-X.hush*0.9;if(G.wm){G.wm.userData.A=G.wA;G.wm.userData.U.uSwell.value=G.swell;}
+  if(X.hush>0.6&&S.state==='play'){X.breathT-=dt;if(X.breathT<=0){X.breathT=3+Math.random()*0.8;noiseBurst(1.1,420,0.05);setTimeout(()=>noiseBurst(1.4,320,0.04),1400);}}
+  if(!mr||a<0||S.l3wake){X.lure.s.visible=false;X.sil.visible=false;X.shadow.visible=false;return;}
+  const calm=X.hush<0.05&&!(a>L3.BREACH-10&&a<L3.BREACH+60)&&a<L3.SWALLOW-12;X.calm=calm;
+  // golpes desde abajo: la balsa da un salto, o una sombra pasa bajo el nadador
+  X.kickT-=dt;if(X.kickT<=0&&calm&&a>20){X.kickT=24+Math.random()*26;const onR=Math.hypot(P.x-mr.x,P.z-mr.z)<5&&!S.swim;
+    tone(46,0,0.6,0.34,'sine');noiseBurst(0.5,110,0.32);S.scareShake=Math.max(S.scareShake||0,0.8);S.san=Math.max(0,S.san-0.02);
+    if(onR){X.kick=1;if(P.y<=mr.base+0.7)P.vy=2.8;}else if(S.swim)X.sh={t:0,ang:Math.random()*6.283};}
+  X.kick=Math.max(0,X.kick-dt*1.5);if(X.kick>0){mr.mesh.position.y+=0.45*X.kick*Math.abs(Math.sin(X.kick*9));mr.mesh.rotation.z+=0.14*X.kick*Math.sin(X.kick*12);}
+  if(X.sh){X.sh.t+=dt;const k=X.sh.t,dx=Math.cos(X.sh.ang),dz=Math.sin(X.sh.ang);X.shadow.visible=true;X.shadow.position.set(P.x+dx*(k-1.3)*16,L3.SEA-2.5,P.z+dz*(k-1.3)*16);X.shadow.rotation.z=-X.sh.ang+Math.PI/2;X.shadow.material.opacity=0.6*Math.sin(Math.min(1,k/2.6)*Math.PI);if(k>2.6){X.sh=null;X.shadow.visible=false;}}
+  // luz engañosa: parece otro elevador o un barco; al acercarte o alumbrarla, era un fotóforo y se hunde
+  const L=X.lure;X.lightT-=dt;
+  if(!L.on&&X.lightT<=0&&calm){X.lightT=60+Math.random()*40;const fx=-Math.sin(P.yaw),fz=-Math.cos(P.yaw),ang=Math.atan2(fz,fx)+(Math.random()-0.5)*1.6,d=450+Math.random()*350;L.x=P.x+Math.cos(ang)*d;L.z=P.z+Math.sin(ang)*d;L.on=true;L.t=0;L.rev=-1;L.s.material.color.setHex(0xfff2c8);L.s.visible=true;}
+  if(L.on){L.t+=dt;const d=Math.hypot(L.x-P.x,L.z-P.z);let lit=false;
+    if(lampHeld()&&S.flashOn&&L.rev<0){const fx=-Math.sin(P.yaw)*Math.cos(P.pitch),fz=-Math.cos(P.yaw)*Math.cos(P.pitch),dx=(L.x-P.x)/d,dz=(L.z-P.z)/d;lit=fx*dx+fz*dz>0.985&&d<550;}
+    if(L.rev<0&&(d<160||lit||L.t>45)){L.rev=0;L.s.material.color.setHex(0x7affe0);noiseBurst(1.2,260,0.05*clamp(1-d/600,0.2,1));}
+    const blink=L.rev<0?(Math.sin(L.t*2.2)>-0.3?1:0.15):1,sink=L.rev<0?0:L.rev;if(L.rev>=0)L.rev+=dt;
+    const sz=Math.max(3,d*0.022)*(L.rev<0?1:1+L.rev*0.4);L.s.scale.set(sz,sz,1);L.s.position.set(L.x,L3.SEA+7+Math.sin(L.t*1.3)*0.6-sink*4,L.z);L.s.material.opacity=blink*(L.rev<0?0.95:Math.max(0,1-L.rev/2.5));
+    if(L.rev>2.5){L.on=false;L.s.visible=false;}}
+  // voces en el viento
+  X.voiceT-=dt;if(X.voiceT<=0){X.voiceT=28+Math.random()*40;if(calm&&S.state==='play')l3Voice();}}
+// relámpago con silueta: se llama desde la tormenta al caer un rayo
+function l3SilFlash(G){const X=G.scare;if(!X||!X.calm||Math.random()>0.4)return false;const fx=-Math.sin(P.yaw),fz=-Math.cos(P.yaw),ang=Math.atan2(fz,fx)+(Math.random()-0.5)*1.2,d=700+Math.random()*350;
+  X.sil.position.set(P.x+Math.cos(ang)*d,L3.SEA,P.z+Math.sin(ang)*d);X.sil.lookAt(P.x,L3.SEA,P.z);X.silOn=true;return true;}
 // ----- construcción del nivel -----
 function buildLevel3(){
   const grp=new THREE.Group();
@@ -4565,7 +4632,7 @@ function buildLevel3(){
     wr.position.set(G.spawn.x+5,l3IslH(G.spawn.x+5,G.spawn.z-2)+0.06,G.spawn.z-2);grp.add(wr);}
   // balsas y criatura
   G.raftMesh=()=>{const m=makeRaft();grp.add(m);return m;};
-  makeSerpent(G);l3FaunaBuild(G);
+  makeSerpent(G);l3FaunaBuild(G);l3ScareBuild(G);
   addElevLights(grp,true);
   // ----- suelo, colisiones y agua -----
   G.ground=function(x,z,y){
@@ -4617,15 +4684,16 @@ function l3Tick(G,dt){
   l3SerpentTick(G,dt,mr,a);
   l3FaunaTick(G,dt,mr,a);
   l3StormTick(G,dt);
+  l3ScareTick(G,dt,mr,a);
   l3SprayTick(G,dt);
   // ---- sonido del mar ----
   if(A.ctx&&A.noise&&!A.sea){const s=A.ctx.createBufferSource();s.buffer=A.noise;s.loop=true;const f=A.ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=520;const g=A.ctx.createGain();g.gain.value=0;s.connect(f);f.connect(g);g.connect(A.master);s.start();A.sea={s,f,g};}
-  if(A.sea){const sw=0.5+0.5*Math.sin(S.t*0.45)*Math.sin(S.t*0.17+1),uw=S.camY<l3Surf(P.x,P.z);A.sea.g.gain.setTargetAtTime(S.l3wake&&S.l3wake.t<3.2?0.02:(0.05+0.07*sw)*(uw?0.4:1),A.ctx.currentTime,0.4);A.sea.f.frequency.setTargetAtTime(uw?180:420+380*sw,A.ctx.currentTime,0.4);}
+  if(A.sea){const sw=0.5+0.5*Math.sin(S.t*0.45)*Math.sin(S.t*0.17+1),uw=S.camY<l3Surf(P.x,P.z);A.sea.g.gain.setTargetAtTime(S.l3wake&&S.l3wake.t<3.2?0.02:(0.05+0.07*sw)*(uw?0.4:1)*(1-0.95*(G.hush||0)),A.ctx.currentTime,0.4);A.sea.f.frequency.setTargetAtTime(uw?180:420+380*sw,A.ctx.currentTime,0.4);}
   L3GLOW.t.value=S.t;G.hum=0;}
 function l3SerpentTick(G,dt,mr,a){const Z=G.ser;
   if(!mr){l3HideSerpent(G);G.amb=0;return;}
   const rr=mr.run,seed=parseInt(rr.id,36)||1,side=(seed&1)?1:-1;
-  Z.glowB.visible=false;Z.eyes.forEach(e=>e.g.visible=true);
+  Z.glowB.visible=false;Z.eyes.forEach(e=>e.g.visible=true);if(G.wm)G.wm.userData.U.uGlowW.value.w=0;G.serNear=0;
   // salto: un costado de la balsa, a ~750 m
   const tb=a-L3.BREACH;
   if(tb>=0&&tb<Z.jumpEnd){const z0=L3.DOCK+l3Dist(L3.BREACH)+250,x0=mr.x+side*1150;
@@ -4651,6 +4719,8 @@ function l3SerpentTick(G,dt,mr,a){const Z=G.ser;
     // cuando la cabeza pasa cerca por debajo: un gemido grave
     const hp=Z.head.position,dh=Math.hypot(hp.x-P.x,hp.z-P.z),key=rr.id+(w1?'a':'b')+Math.floor(t/30);
     if(dh<260&&G.wn!==key){G.wn=key;tone(31,0,6,0.22,'sine');tone(46,0.6,5,0.12,'sine');noiseBurst(4,90,0.08);S.san=Math.max(0,S.san-0.03);}
+    {let best=1e9,bx=0,bz=0;const pp=Z.pos,NR=Z.NR;for(let i=0;i<Z.NS;i+=4){const k0=(i*(NR+1))*3,k1=(i*(NR+1)+NR/2)*3,cx2=(pp[k0]+pp[k1])/2,cz2=(pp[k0+2]+pp[k1+2])/2,d2=Math.hypot(cx2-P.x,cz2-P.z);if(d2<best){best=d2;bx=cx2;bz=cz2;}}
+      const gk=fade*clamp(1-best/520,0,1);if(G.wm)G.wm.userData.U.uGlowW.value.set(bx,bz,260,0.55*gk);G.serNear=gk;}
     G.amb=0.05+0.12*clamp(1-dh/600,0,1);return;}
   // ataque de frente: aparece adelante de la balsa y se la traga
   const te=a-L3.SWALLOW;
